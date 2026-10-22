@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { User } from "../types";
 import { api, setAccessToken, getAccessToken } from "../services/api";
+import { getCurrentUser } from "../services/mockData";
 
 interface AuthContextType {
   user: User | null;
@@ -21,8 +22,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const refreshMe = async () => {
     try {
-      if (!getAccessToken()) {
-        setUser(null);
+      const token = getAccessToken();
+      if (!token) {
+        const stored = getCurrentUser();
+        setUser(stored || null);
         setLoading(false);
         return;
       }
@@ -30,10 +33,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (res.data?.user) {
         setUser(res.data.user);
       } else {
-        setUser(null);
+        const stored = getCurrentUser();
+        setUser(stored || null);
       }
     } catch {
-      setUser(null);
+      const stored = getCurrentUser();
+      setUser(stored || null);
     } finally {
       setLoading(false);
     }

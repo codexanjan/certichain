@@ -1,0 +1,53 @@
+services:
+  # -------------------------------------------------------------
+  # CertiChain Backend API & Real-Time WebSocket Web Service
+  # -------------------------------------------------------------
+  - type: web
+    name: certichain-backend
+    env: node
+    plan: free
+    region: oregon
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npx prisma db push && npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: certichain-postgres
+          property: connectionString
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://frontend-teal-seven-45.vercel.app
+      - key: CORS_ORIGINS
+        value: https://frontend-teal-seven-45.vercel.app,http://localhost:5173,http://localhost:3000
+      - key: BLOCKCHAIN_NETWORK
+        value: hardhat
+      - key: BLOCKCHAIN_RPC_URL
+        value: http://127.0.0.1:8545
+      - key: CONTRACT_ADDRESS
+        value: 0x5FbDB2315678afecb367f032d93F642f64180aa3
+      - key: BOOTSTRAP_ADMIN_EMAIL
+        value: admin@certichain.io
+      - key: BOOTSTRAP_ADMIN_PASSWORD
+        value: AdminSecret2026!
+      - key: BOOTSTRAP_ADMIN_NAME
+        value: CertiChain System Administrator
+
+databases:
+  # -------------------------------------------------------------
+  # Managed PostgreSQL Database for Production CertiChain
+  # -------------------------------------------------------------
+  - name: certichain-postgres
+    plan: free
+    region: oregon
+    databaseName: certichain
+    user: certichain_user

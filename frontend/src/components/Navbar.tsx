@@ -25,15 +25,23 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo & Brand */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 via-brand-600 to-brand-400 flex items-center justify-center text-white shadow-glow group-hover:scale-105 transition-transform">
-              <ShieldCheck className="w-6 h-6" />
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-glow group-hover:scale-105 transition-transform bg-navy-900 border border-brand-500/30 flex items-center justify-center shrink-0">
+              <img
+                src="/logo.png"
+                alt="CertiChain Logo"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = "none";
+                }}
+              />
+              <ShieldCheck className="w-6 h-6 text-brand-400 absolute" style={{ zIndex: -1 }} />
             </div>
             <div>
               <span className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center">
                 Certi<span className="text-brand-500">Chain</span>
               </span>
-              <span className="block text-[9px] uppercase tracking-widest text-slate-400 font-semibold -mt-1">
+              <span className="block text-[9px] uppercase tracking-widest text-brand-500 font-semibold -mt-1">
                 EVM Trust Protocol
               </span>
             </div>
