@@ -1,0 +1,191 @@
+// ==============================================================================
+// CERTICHAIN PRISMA SCHEMA (Local SQLite Development Mode)
+// For PostgreSQL (Docker / Production), see schema.postgresql.prisma
+// ==============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String                  @id @default(uuid())
+  email           String                  @unique
+  passwordHash    String
+  fullName        String
+  role            String                  @default("STUDENT") // SUPER_ADMIN, INSTITUTION_ISSUER, STUDENT
+  status          String                  @default("ACTIVE")  // PENDING, ACTIVE, SUSPENDED, REJECTED
+  institutionId   String?
+  institution     Institution?            @relation(fields: [institutionId], references: [id], onDelete: SetNull)
+  applications    InstitutionApplication[]
+  studentProfile  StudentProfile?
+  refreshTokens   RefreshToken[]
+  auditLogs       AuditLog[]
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  @@index([email])
+  @@index([role])
+}
+
+model Institution {
+  id              String            @id @default(uuid())
+  name            String
+  code            String            @unique
+  contactEmail    String
+  walletAddress   String?
+  status          String            @default("ACTIVE") // ACTIVE, SUSPENDED
+  users           User[]
+  students        StudentProfile[]
+  certificates    Certificate[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([code])
+}
+
+model InstitutionApplication {
+  id                String    @id @default(uuid())
+  applicantUserId   String
+  applicantUser     User      @relation(fields: [applicantUserId], references: [id], onDelete: Cascade)
+  institutionName   String
+  institutionCode   String
+  officialEmail     String
+  websiteUrl        String
+  status            String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewedByUserId  String?
+  reviewNotes       String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([status])
+}
+
+model StudentProfile {
+  id                String         @id @default(uuid())
+  institutionId     String
+  institution       Institution    @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  userId            String?        @unique
+  user              User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  studentIdentifier String         // Enrollment or Roll Number
+  fullName          String
+  email             String
+  certificates      Certificate[]
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@unique([institutionId, studentIdentifier])
+  @@index([email])
+}
+
+model Certificate {
+  id                  String                  @id @default(uuid())
+  certificateId       String                  @unique // e.g. CERT-2026-00123
+  studentProfileId    String
+  studentProfile      StudentProfile          @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  institutionId       String
+  institution         Institution             @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  title               String                  // Degree or Award title
+  degree              String                  // Program of study
+  department          String?
+  cgpaOrGrade         String?
+  issueDate           DateTime
+  expiryDate          DateTime?
+  documentStorageKey  String                  // Local file path or cloud key
+  documentSha256      String                  // 64-character SHA-256 hex string
+  onChainKey          String                  @unique // Derived bytes32 key
+  status              String                  @default("PENDING_BLOCKCHAIN") // DRAFT, PENDING_BLOCKCHAIN, ACTIVE, REVOKED
+  blockchainNetwork   String                  @default("hardhat")
+  txHash              String?
+  blockNumber         Int?
+  revokedAt           DateTime?
+  revocationReason    String?
+  transactions        BlockchainTransaction[]
+  verifications       VerificationRecord[]
+  fraudAnalyses       FraudAnalysis[]
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  @@index([certificateId])
+  @@index([documentSha256])
+  @@index([status])
+}
+
+model BlockchainTransaction {
+  id            String       @id @default(uuid())
+  certificateId String
+  certificate   Certificate  @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+  action        String       // REGISTER, REVOKE
+  txHash        String?
+  network       String       @default("hardhat")
+  status        String       @default("QUEUED") // QUEUED, SUBMITTED, CONFIRMED, FAILED
+  blockNumber   Int?
+  errorMessage  String?
+  retryCount    Int          @default(0)
+  submittedAt   DateTime?
+  confirmedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([status])
+  @@index([txHash])
+}
+
+model VerificationRecord {
+  id               String       @id @default(uuid())
+  certificateId    String?
+  certificate      Certificate? @relation(fields: [certificateId], references: [id], onDelete: SetNull)
+  verificationType String       // QR_SCAN, CERTIFICATE_ID, DOCUMENT_UPLOAD
+  result           String       // VERIFIED, TAMPERED, REVOKED, NOT_FOUND, PENDING, BLOCKCHAIN_UNAVAILABLE
+  submittedHash    String?
+  ipHash           String?
+  userAgent        String?
+  createdAt        DateTime     @default(now())
+
+  @@index([result])
+  @@index([createdAt])
+}
+
+model FraudAnalysis {
+  id             String       @id @default(uuid())
+  certificateId  String?
+  certificate    Certificate? @relation(fields: [certificateId], references: [id], onDelete: SetNull)
+  riskScore      Int          // 0 to 100
+  classification String       // VERY_LOW, LOW, MEDIUM, HIGH, CRITICAL
+  reasons        String       // JSON-encoded array of rule triggers
+  engineVersion  String       @default("v1.0-rules")
+  createdAt      DateTime     @default(now())
+
+  @@index([classification])
+  @@index([riskScore])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String
+  metadata   String?  // JSON-encoded non-sensitive details
+  createdAt  DateTime @default(now())
+
+  @@index([action])
+  @@index([entityType])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([tokenHash])
+}

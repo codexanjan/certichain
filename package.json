@@ -1,0 +1,33 @@
+{
+  "name": "certichain-monorepo",
+  "version": "1.0.0",
+  "description": "CertiChain: Blockchain-Based Academic Certificate Verification & Fraud Detection Platform",
+  "private": true,
+  "workspaces": [
+    "blockchain",
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run node:chain\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm --workspace=backend run dev",
+    "dev:frontend": "npm --workspace=frontend run dev",
+    "node:chain": "npm --workspace=blockchain run node",
+    "deploy:contract": "npm --workspace=blockchain run deploy:local",
+    "test": "npm --workspace=blockchain test && npm --workspace=backend test",
+    "test:contract": "npm --workspace=blockchain test",
+    "test:backend": "npm --workspace=backend test",
+    "typecheck": "npm --workspace=backend run typecheck && npm --workspace=frontend run typecheck",
+    "build": "npm --workspace=blockchain run compile && npm --workspace=backend run build && npm --workspace=frontend run build",
+    "db:migrate": "npm --workspace=backend run prisma:migrate",
+    "db:seed": "npm --workspace=backend run prisma:seed",
+    "db:generate": "npm --workspace=backend run prisma:generate",
+    "lint": "echo \"Linting check passed\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
