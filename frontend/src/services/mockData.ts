@@ -64,6 +64,33 @@ const DEFAULT_CERTIFICATES: Certificate[] = [
     },
     verificationUrl: "https://frontend-teal-seven-45.vercel.app/verify/CERT-2026-000456",
   },
+  {
+    id: "cert-003",
+    certificateId: "CERT-2026-000789",
+    studentProfileId: "sp-001",
+    institutionId: "inst-001",
+    title: "Master of Science in Distributed Ledger Technology & Cryptography",
+    degree: "M.Sc Blockchain & Cryptography",
+    department: "School of Computing",
+    cgpaOrGrade: "9.92 / 10.00",
+    issueDate: "2026-10-23T00:00:00.000Z",
+    documentSha256: "9f2b8c4d7a1e3f5a7b9c1d3e5f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a",
+    status: "ACTIVE",
+    blockchainNetwork: "hardhat",
+    txHash: "0x71a3e9c2b4d8f01a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e5f7a8b9c0d1e2f3a",
+    blockNumber: 115,
+    createdAt: "2026-10-23T09:00:00.000Z",
+    institution: {
+      name: "Massachusetts Institute of Technology",
+      code: "MIT",
+    },
+    studentProfile: {
+      fullName: "Anjan Shetty",
+      studentIdentifier: "MIT-2026-CS001",
+      email: "anjan@student.mit.edu",
+    },
+    verificationUrl: "https://frontend-teal-seven-45.vercel.app/verify/CERT-2026-000789",
+  },
 ];
 
 // Default Seed Users

@@ -152,7 +152,14 @@ export const LandingPage: React.FC = () => {
                 onClick={() => handlePillClick("CERT-2026-000123")}
                 className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono text-[11px] font-semibold transition"
               >
-                MIT Valid (CERT-2026-000123)
+                MIT B.Tech (CERT-2026-000123)
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePillClick("CERT-2026-000789")}
+                className="px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 font-mono text-[11px] font-semibold transition"
+              >
+                MIT M.Sc New (CERT-2026-000789)
               </button>
               <button
                 type="button"
