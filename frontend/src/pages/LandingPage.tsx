@@ -145,35 +145,31 @@ export const LandingPage: React.FC = () => {
             </div>
 
             {/* Quick Demo Test Chips */}
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs">
-              <span className="text-slate-400 font-medium">Quick Demo Records:</span>
-              <button
-                type="button"
-                onClick={() => handlePillClick("CERT-2026-000123")}
-                className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono text-[11px] font-semibold transition"
-              >
-                MIT B.Tech (CERT-2026-000123)
-              </button>
+            <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2 text-xs">
+              <span className="text-slate-400 font-medium text-[11px]">Instant Demo:</span>
               <button
                 type="button"
                 onClick={() => handlePillClick("CERT-2026-000789")}
-                className="px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 font-mono text-[11px] font-semibold transition"
+                className="px-3 py-1 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium text-[11px] transition flex items-center gap-1.5"
               >
-                MIT M.Sc New (CERT-2026-000789)
+                <CheckCircle2 className="w-3 h-3" />
+                <span>Verified Degree</span>
               </button>
               <button
                 type="button"
                 onClick={() => handlePillClick("CERT-2026-000456")}
-                className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 font-mono text-[11px] font-semibold transition"
+                className="px-3 py-1 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 font-medium text-[11px] transition flex items-center gap-1.5"
               >
-                Stanford Revoked (CERT-2026-000456)
+                <AlertTriangle className="w-3 h-3" />
+                <span>Revoked Record</span>
               </button>
               <button
                 type="button"
                 onClick={() => handlePillClick("TAMPER-TEST-999")}
-                className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-mono text-[11px] font-semibold transition"
+                className="px-3 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-medium text-[11px] transition flex items-center gap-1.5"
               >
-                Tamper Anomaly Test
+                <XCircle className="w-3 h-3" />
+                <span>Tamper Detection</span>
               </button>
             </div>
           </div>

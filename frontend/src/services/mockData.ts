@@ -33,7 +33,7 @@ const DEFAULT_CERTIFICATES: Certificate[] = [
       studentIdentifier: "MIT-2026-CS001",
       email: "anjan@student.mit.edu",
     },
-    verificationUrl: "https://frontend-teal-seven-45.vercel.app/verify/CERT-2026-000123",
+    verificationUrl: "https://certchain-platform.vercel.app/verify/CERT-2026-000123",
   },
   {
     id: "cert-002",
@@ -62,7 +62,7 @@ const DEFAULT_CERTIFICATES: Certificate[] = [
       studentIdentifier: "STANFORD-2026-AI042",
       email: "sarah@stanford.edu",
     },
-    verificationUrl: "https://frontend-teal-seven-45.vercel.app/verify/CERT-2026-000456",
+    verificationUrl: "https://certchain-platform.vercel.app/verify/CERT-2026-000456",
   },
   {
     id: "cert-003",
@@ -89,7 +89,7 @@ const DEFAULT_CERTIFICATES: Certificate[] = [
       studentIdentifier: "MIT-2026-CS001",
       email: "anjan@student.mit.edu",
     },
-    verificationUrl: "https://frontend-teal-seven-45.vercel.app/verify/CERT-2026-000789",
+    verificationUrl: "https://certchain-platform.vercel.app/verify/CERT-2026-000789",
   },
 ];
 
@@ -553,7 +553,7 @@ export async function simulateIssueCertificate(formData: FormData): Promise<{ ce
       studentIdentifier,
       email: studentEmail,
     },
-    verificationUrl: `https://frontend-teal-seven-45.vercel.app/verify/${certId}`,
+    verificationUrl: `https://certchain-platform.vercel.app/verify/${certId}`,
   };
 
   certs.unshift(newCert);
@@ -620,7 +620,7 @@ export function simulateDownloadPdf(certId: string): Blob {
     </div>
     <div class="footer">
       Verified on EVM Smart Contract Address: 0x5FbDB2315678afecb367f032d93F642f64180aa3<br />
-      Verify online: ${cert.verificationUrl || `https://frontend-teal-seven-45.vercel.app/verify/${cert.certificateId}`}
+      Verify online: ${cert.verificationUrl || `https://certchain-platform.vercel.app/verify/${cert.certificateId}`}
     </div>
   </div>
 </body>
