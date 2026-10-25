@@ -46,6 +46,7 @@ jobs:
         run: |
           cd backend
           npx prisma db push --skip-generate
+          npm run prisma:seed
           npm test
 
       - name: Build Production Frontend Application
