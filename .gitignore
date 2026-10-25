@@ -22,8 +22,10 @@ cache/
 typechain-types/
 
 # Uploaded & Protected Files
-storage/
-uploads/
+/storage/
+/backend/storage/
+/uploads/
+/backend/uploads/
 *.pdf
 !fixtures/*.pdf
 
