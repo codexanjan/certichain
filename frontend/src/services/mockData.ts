@@ -228,6 +228,13 @@ export function saveStoredApplications(apps: any[]): void {
   } catch {}
 }
 
+export function simulateApproveApplication(appId: string): { success: boolean; message: string } {
+  const apps = getStoredApplications();
+  const updated = apps.map((a) => (a.id === appId ? { ...a, status: "APPROVED" } : a));
+  saveStoredApplications(updated);
+  return { success: true, message: "Application approved successfully" };
+}
+
 /**
  * Computes SHA-256 in browser using native Web Crypto API
  */
@@ -466,11 +473,65 @@ export async function simulateVerify(query: string): Promise<VerificationResult>
   };
 }
 
-export async function simulateVerifyFile(file: File): Promise<VerificationResult> {
+export async function simulateVerifyFile(file: File, certificateId?: string): Promise<VerificationResult> {
   const hash = await computeBrowserSha256(file);
   const certs = getStoredCertificates();
-  const match = certs.find((c) => c.documentSha256.toLowerCase() === hash.toLowerCase());
 
+  // If a certificateId was provided, match against that certificate
+  if (certificateId && certificateId.trim()) {
+    const cert = certs.find((c) => c.certificateId.toLowerCase() === certificateId.toLowerCase().trim());
+    if (cert) {
+      const isMatch = cert.documentSha256.toLowerCase() === hash.toLowerCase();
+      if (isMatch) {
+        return simulateVerify(cert.certificateId);
+      } else {
+        return {
+          status: "TAMPERED",
+          message: `Cryptographic hash mismatch! Document byte digest does not match on-chain record for ${cert.certificateId}.`,
+          certificateId: cert.certificateId,
+          certificate: {
+            id: cert.id,
+            certificateId: cert.certificateId,
+            title: cert.title,
+            degree: cert.degree,
+            department: cert.department,
+            issueDate: cert.issueDate,
+            institutionName: cert.institution?.name || "Accredited University",
+            institutionCode: cert.institution?.code || "EDU",
+            studentName: cert.studentProfile?.fullName || "Graduate",
+            documentSha256: cert.documentSha256,
+            txHash: cert.txHash,
+            blockNumber: cert.blockNumber,
+          },
+          integrity: {
+            hashMatched: false,
+            registeredHash: cert.documentSha256,
+            submittedHash: hash,
+          },
+          blockchain: {
+            checked: true,
+            confirmedOnChain: true,
+            network: "Hardhat EVM (Local / Fallback)",
+            contractAddress: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+            txHash: cert.txHash,
+          },
+          fraudRisk: {
+            riskScore: 96,
+            classification: "CRITICAL",
+            reasons: [
+              "Raw document byte digest diverges from registered SHA-256 fingerprint",
+              "File altered or re-exported after university registrar issuance",
+              "Critical tamper alert flagged for manual verification review",
+            ],
+            engineVersion: "1.4.0-simulation",
+          },
+          verifiedAt: new Date().toISOString(),
+        };
+      }
+    }
+  }
+
+  const match = certs.find((c) => c.documentSha256.toLowerCase() === hash.toLowerCase());
   if (match) {
     return simulateVerify(match.certificateId);
   }

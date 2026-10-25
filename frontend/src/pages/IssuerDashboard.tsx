@@ -18,6 +18,9 @@ import {
   Hash,
   X,
   ExternalLink,
+  Building,
+  GraduationCap,
+  Sparkles,
 } from "lucide-react";
 import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -98,17 +101,7 @@ export const IssuerDashboard: React.FC = () => {
       setCertificates((prev) =>
         prev.map((c) =>
           c.certificateId === data.certificateId
-            ? { ...c, status: "ACTIVE", blockNumber: data.blockNumber, txHash: data.txHash }
-            : c
-        )
-      );
-    });
-
-    socket.on("certificate:revoked", (data: { certificateId: string; reason: string }) => {
-      setCertificates((prev) =>
-        prev.map((c) =>
-          c.certificateId === data.certificateId
-            ? { ...c, status: "REVOKED", revocationReason: data.reason }
+            ? { ...c, status: "ACTIVE", txHash: data.txHash, blockNumber: data.blockNumber }
             : c
         )
       );
@@ -117,76 +110,77 @@ export const IssuerDashboard: React.FC = () => {
     return () => {
       socket.off("certificate:status");
       socket.off("blockchain:confirmed");
-      socket.off("certificate:revoked");
     };
   }, [socket]);
 
-  // Handle Certificate Issuance
-  const handleIssueSubmit = async (e: React.FormEvent) => {
+  const handleIssueCertificate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pdfFile) {
-      setIssuanceError("Please upload an official certificate PDF");
+      setIssuanceError("Please upload an official PDF credential file.");
       return;
     }
 
     setIssuing(true);
     setIssuanceError(null);
-    setIssuanceProgress("1/5: Uploading PDF and verifying magic bytes (%PDF-)...");
+    setIssuanceProgress("Calculating raw-byte SHA-256 digest...");
+
+    const formData = new FormData();
+    formData.append("studentName", studentName);
+    formData.append("studentIdentifier", studentIdentifier);
+    formData.append("studentEmail", studentEmail);
+    formData.append("title", title);
+    formData.append("degree", degree);
+    formData.append("department", department);
+    formData.append("cgpaOrGrade", cgpaOrGrade);
+    formData.append("issueDate", issueDate);
+    formData.append("file", pdfFile);
 
     try {
-      const formData = new FormData();
-      formData.append("studentName", studentName);
-      formData.append("studentIdentifier", studentIdentifier);
-      formData.append("studentEmail", studentEmail);
-      formData.append("title", title);
-      formData.append("degree", degree);
-      formData.append("department", department);
-      formData.append("cgpaOrGrade", cgpaOrGrade);
-      formData.append("issueDate", issueDate);
-      formData.append("file", pdfFile);
-
-      setIssuanceProgress("2/5: Computing raw byte SHA-256 cryptographic digest...");
-      setIssuanceProgress("3/5: Persisting certificate record in database...");
-      setIssuanceProgress("4/5: Submitting registration transaction to smart contract...");
-
-      const res = await api.postForm<{
-        success: boolean;
-        data: { certificate: Certificate; qrCodeDataUrl: string };
-      }>("/certificates", formData);
-
-      setIssuanceProgress("5/5: Certificate issued! Awaiting blockchain block confirmation...");
-
-      setTimeout(() => {
-        setIssueModalOpen(false);
-        setIssuing(false);
-        setIssuanceProgress(null);
-        fetchCertificates();
-      }, 1200);
+      setTimeout(() => setIssuanceProgress("Broadcasting EVM smart contract transaction..."), 600);
+      await api.postForm("/certificates", formData);
+      setIssueModalOpen(false);
+      resetIssueForm();
+      fetchCertificates();
     } catch (err) {
       setIssuanceError(err instanceof Error ? err.message : "Issuance failed");
+    } finally {
       setIssuing(false);
+      setIssuanceProgress(null);
     }
   };
 
-  // Handle Revocation
-  const handleRevokeSubmit = async (e: React.FormEvent) => {
+  const resetIssueForm = () => {
+    setStudentName("");
+    setStudentIdentifier("");
+    setStudentEmail("");
+    setTitle("Bachelor of Science in Computer Science");
+    setDegree("B.Sc. Computer Science");
+    setDepartment("Department of Computer Science");
+    setCgpaOrGrade("9.4 / 10.0");
+    setIssueDate(new Date().toISOString().split("T")[0]);
+    setPdfFile(null);
+    setIssuanceError(null);
+  };
+
+  const handleRevoke = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!revokeCertId || !revokeReason.trim()) return;
+    if (!revokeCertId) return;
 
     setRevoking(true);
     try {
-      await api.post(`/certificates/${revokeCertId}/revoke`, { reason: revokeReason });
+      await api.post(`/certificates/${revokeCertId}/revoke`, {
+        reason: revokeReason || "Administrative Revocation by University Registrar",
+      });
       setRevokeCertId(null);
       setRevokeReason("");
       fetchCertificates();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Revocation failed");
+      alert("Revocation failed: " + (err instanceof Error ? err.message : "Error"));
     } finally {
       setRevoking(false);
     }
   };
 
-  // Download PDF
   const handleDownload = async (certId: string) => {
     try {
       const blob = await api.get<Blob>(`/certificates/${certId}/download`);
@@ -197,334 +191,432 @@ export const IssuerDashboard: React.FC = () => {
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
-    } catch (err) {
-      alert("Failed to download certificate: " + (err instanceof Error ? err.message : "Error"));
+    } catch {
+      alert("Failed to download official certificate PDF.");
     }
   };
 
-  const totalIssued = certificates.length;
-  const activeCount = certificates.filter((c) => c.status === "ACTIVE").length;
-  const pendingCount = certificates.filter((c) => c.status === "PENDING_BLOCKCHAIN").length;
-  const revokedCount = certificates.filter((c) => c.status === "REVOKED").length;
+  // Metrics
+  const totalCerts = certificates.length;
+  const activeCerts = certificates.filter((c) => c.status === "ACTIVE").length;
+  const pendingCerts = certificates.filter(
+    (c) => c.status === "PENDING_BLOCKCHAIN" || c.status === "DRAFT"
+  ).length;
+  const revokedCerts = certificates.filter((c) => c.status === "REVOKED").length;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-200 dark:border-slate-800 gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 bg-brand-500/10 px-2.5 py-0.5 rounded-full border border-brand-500/20">
-              Institution Portal
-            </span>
-            <span className="text-xs text-slate-400 font-mono">Code: {user?.institutionCode || "INST"}</span>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+      {/* Top Banner & University Details */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between pb-8 border-b border-white/[0.08] gap-4">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-mono font-semibold">
+            <Building className="w-3.5 h-3.5" />
+            <span>Accredited Registrar Portal</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
-            {user?.institutionName || "Institution Registry"}
+          <h1 className="text-3xl font-black text-white tracking-tight">
+            University Credential Hub
           </h1>
+          <p className="text-xs text-slate-300">
+            Logged in as: <span className="font-mono text-cyan-300 font-bold">{user?.email}</span>
+          </p>
         </div>
 
-        <button
-          onClick={() => {
-            setIssueModalOpen(true);
-            setIssuanceError(null);
-            setIssuanceProgress(null);
-          }}
-          className="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-white bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 shadow-glow flex items-center justify-center gap-2 transition"
-        >
-          <FilePlus className="w-4 h-4" />
-          Issue New Certificate
-        </button>
-      </div>
-
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 shadow-card">
-          <div className="text-xs text-slate-400 font-semibold uppercase">Total Issued</div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalIssued}</div>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIssueModalOpen(true)}
+            className="px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-navy-950 bg-gradient-to-r from-cyan-400 to-sky-400 hover:from-cyan-300 hover:to-white shadow-glow-cyan transition flex items-center gap-2 min-h-[44px]"
+          >
+            <FilePlus className="w-4 h-4" />
+            <span>Issue Academic Degree</span>
+          </button>
         </div>
+      </header>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 shadow-card">
-          <div className="text-xs text-emerald-500 font-semibold uppercase flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Active On-Chain
+      {/* KPI Stats Cards */}
+      <section aria-label="Credential Statistics" className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="p-5 rounded-2xl bg-navy-900/80 border border-white/10 shadow-card">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono text-slate-400 font-semibold uppercase">Total Issued</span>
+            <Layers className="w-4 h-4 text-cyan-400" />
           </div>
-          <div className="text-2xl font-black text-emerald-500 mt-1">{activeCount}</div>
+          <div className="text-3xl font-black text-white mt-2">{totalCerts}</div>
+          <div className="text-[11px] text-slate-400 mt-1 font-mono">Academic Records</div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 shadow-card">
-          <div className="text-xs text-blue-500 font-semibold uppercase flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5" /> Pending Blocks
+        <div className="p-5 rounded-2xl bg-navy-900/80 border border-emerald-500/20 shadow-card">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono text-emerald-400 font-semibold uppercase">On-Chain Active</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-2xl font-black text-blue-500 mt-1">{pendingCount}</div>
+          <div className="text-3xl font-black text-emerald-400 mt-2">{activeCerts}</div>
+          <div className="text-[11px] text-slate-400 mt-1 font-mono">Verified in State Machine</div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 shadow-card">
-          <div className="text-xs text-amber-500 font-semibold uppercase flex items-center gap-1">
-            <XCircle className="w-3.5 h-3.5" /> Revoked
+        <div className="p-5 rounded-2xl bg-navy-900/80 border border-sky-500/20 shadow-card">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono text-sky-400 font-semibold uppercase">Pending Commit</span>
+            <Clock className="w-4 h-4 text-sky-400" />
           </div>
-          <div className="text-2xl font-black text-amber-500 mt-1">{revokedCount}</div>
-        </div>
-      </div>
-
-      {/* Search & Filter Controls */}
-      <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by ID, name, or roll..."
-            className="w-full pl-10 pr-4 py-2 rounded-xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder-slate-400"
-          />
+          <div className="text-3xl font-black text-sky-400 mt-2">{pendingCerts}</div>
+          <div className="text-[11px] text-slate-400 mt-1 font-mono">Awaiting Block Confirmation</div>
         </div>
 
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300"
-        >
-          <option value="">All Statuses</option>
-          <option value="ACTIVE">Active</option>
-          <option value="PENDING_BLOCKCHAIN">Pending</option>
-          <option value="REVOKED">Revoked</option>
-        </select>
-      </div>
+        <div className="p-5 rounded-2xl bg-navy-900/80 border border-rose-500/20 shadow-card">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono text-rose-400 font-semibold uppercase">Revoked</span>
+            <XCircle className="w-4 h-4 text-rose-400" />
+          </div>
+          <div className="text-3xl font-black text-rose-400 mt-2">{revokedCerts}</div>
+          <div className="text-[11px] text-slate-400 mt-1 font-mono">Permanently Deactivated</div>
+        </div>
+      </section>
 
-      {/* Certificates Table */}
-      <div className="rounded-3xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 shadow-card overflow-hidden">
-        <div className="overflow-x-auto">
+      {/* Main Ledger Table Card */}
+      <section aria-labelledby="issued-records-heading" className="rounded-3xl bg-navy-900/90 border border-white/10 shadow-card backdrop-blur-2xl p-6 sm:p-8 space-y-6">
+        {/* Search and Filters Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h2 id="issued-records-heading" className="text-lg font-bold text-white">
+              Institutional Credential Ledger
+            </h2>
+            <p className="text-xs text-slate-400">
+              Manage cryptographic certificates and view live EVM block confirmations.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative">
+              <label htmlFor="ledger-search-input" className="sr-only">Search records</label>
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                id="ledger-search-input"
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search student or ID..."
+                className="pl-9 pr-3.5 py-2 rounded-xl bg-navy-1000 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 min-h-[44px]"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="status-filter-select" className="sr-only">Filter by status</label>
+              <select
+                id="status-filter-select"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3.5 py-2 rounded-xl bg-navy-1000 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-400 min-h-[44px]"
+              >
+                <option value="">All Statuses</option>
+                <option value="ACTIVE">Active (Verified)</option>
+                <option value="PENDING">Pending Block</option>
+                <option value="REVOKED">Revoked</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Certificates Table */}
+        <div className="overflow-x-auto rounded-2xl border border-white/[0.08]">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 dark:bg-navy-950/70 border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
+            <thead className="bg-navy-1000 text-slate-400 font-mono text-[11px] uppercase tracking-wider border-b border-white/[0.08]">
               <tr>
                 <th className="py-3.5 px-4">Certificate ID</th>
-                <th className="py-3.5 px-4">Recipient</th>
-                <th className="py-3.5 px-4">Program / Degree</th>
-                <th className="py-3.5 px-4">SHA-256 Digest</th>
+                <th className="py-3.5 px-4">Graduate</th>
+                <th className="py-3.5 px-4">Degree & Major</th>
                 <th className="py-3.5 px-4">Status</th>
+                <th className="py-3.5 px-4">Issued On</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-white/[0.05]">
               {loading ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-400">
-                    <RotateCcw className="w-6 h-6 animate-spin mx-auto text-brand-500 mb-2" />
-                    Loading certificate records...
+                    <RotateCcw className="w-5 h-5 animate-spin mx-auto text-cyan-400 mb-2" />
+                    Synchronizing ledger with EVM state...
                   </td>
                 </tr>
               ) : certificates.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-400">
-                    No certificate records found matching your filters.
+                    No academic certificates matched your search criteria.
                   </td>
                 </tr>
               ) : (
-                certificates.map((cert) => (
-                  <tr key={cert.id} className="hover:bg-slate-50/50 dark:hover:bg-navy-950/40 transition">
-                    <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white">
-                      {cert.certificateId}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="font-bold text-slate-900 dark:text-white">
-                        {cert.studentProfile?.fullName || "N/A"}
-                      </div>
-                      <div className="text-[11px] text-slate-400">
-                        {cert.studentProfile?.studentIdentifier || "No Roll"}
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="font-semibold text-slate-800 dark:text-slate-200">{cert.title}</div>
-                      <div className="text-[10px] text-brand-600 dark:text-brand-400">{cert.degree}</div>
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-[10px] text-slate-400 max-w-[140px] truncate" title={cert.documentSha256}>
-                      {cert.documentSha256.slice(0, 16)}...
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <StatusBadge status={cert.status} size="sm" />
-                    </td>
-                    <td className="py-3.5 px-4 text-right space-x-2">
-                      <button
-                        onClick={() => setSelectedQrCert(cert)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-brand-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                        title="View QR Code"
-                      >
-                        <QrCode className="w-4 h-4" />
-                      </button>
-
-                      <Link
-                        to={`/verify/${cert.certificateId}`}
-                        target="_blank"
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-brand-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition inline-block"
-                        title="Open Public Verification"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </Link>
-
-                      <button
-                        onClick={() => handleDownload(cert.certificateId)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                        title="Download Document"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-
-                      {cert.status !== "REVOKED" && (
-                        <button
-                          onClick={() => setRevokeCertId(cert.certificateId)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                          title="Revoke Certificate"
-                        >
-                          <XCircle className="w-4 h-4" />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                certificates.map((cert) => {
+                  const studentName = cert.studentProfile?.fullName || "Graduate";
+                  const studentId = cert.studentProfile?.studentIdentifier || cert.certificateId;
+                  return (
+                    <tr key={cert.certificateId} className="hover:bg-white/[0.02] transition">
+                      <td className="py-3.5 px-4 font-mono font-bold text-cyan-400">
+                        {cert.certificateId}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-white">{studentName}</div>
+                        <div className="text-[11px] text-slate-400 font-mono">{studentId}</div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="font-medium text-slate-200">{cert.title}</div>
+                        <div className="text-[11px] text-slate-400">{cert.department}</div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <StatusBadge status={cert.status} size="sm" />
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-slate-400">
+                        {new Date(cert.issueDate).toLocaleDateString()}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedQrCert(cert)}
+                            title="Show Scannable QR Code"
+                            aria-label={`View QR code for ${studentName}`}
+                            className="p-2 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition min-h-[36px] min-w-[36px] flex items-center justify-center"
+                          >
+                            <QrCode className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDownload(cert.certificateId)}
+                            title="Download Certified PDF"
+                            aria-label={`Download PDF for ${studentName}`}
+                            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition min-h-[36px] min-w-[36px] flex items-center justify-center"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                          <Link
+                            to={`/verify/${cert.certificateId}`}
+                            title="View Public Audit Proof"
+                            aria-label={`View audit proof for ${studentName}`}
+                            className="p-2 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition min-h-[36px] min-w-[36px] flex items-center justify-center"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </Link>
+                          {cert.status !== "REVOKED" && (
+                            <button
+                              type="button"
+                              onClick={() => setRevokeCertId(cert.certificateId)}
+                              title="Revoke Certificate"
+                              aria-label={`Revoke certificate for ${studentName}`}
+                              className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition min-h-[36px] min-w-[36px] flex items-center justify-center"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      {/* MODAL 1: ISSUE CERTIFICATE */}
+      {/* Issue Certificate Modal */}
       {issueModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-navy-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-xl w-full p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <FilePlus className="w-5 h-5 text-brand-500" />
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">Issue Official Certificate</h3>
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="rounded-3xl bg-navy-900 border border-white/10 shadow-2xl max-w-xl w-full p-6 sm:p-8 space-y-6 my-8">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-bold">
+                  <FilePlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-white">
+                    Issue New Academic Credential
+                  </h3>
+                  <p className="text-xs text-slate-400 font-mono">
+                    Direct on-chain EVM registration & raw byte digestion
+                  </p>
+                </div>
               </div>
               <button
-                onClick={() => !issuing && setIssueModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                type="button"
+                onClick={() => setIssueModalOpen(false)}
+                aria-label="Close modal"
+                className="p-2 rounded-lg text-slate-400 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {issuanceError && (
-              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs font-medium flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 shrink-0" />
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-medium flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
                 <span>{issuanceError}</span>
               </div>
             )}
 
             {issuanceProgress && (
-              <div className="p-4 rounded-xl bg-brand-500/10 border border-brand-500/30 text-brand-600 dark:text-brand-400 text-xs font-bold space-y-1 animate-pulse">
-                <div>{issuanceProgress}</div>
+              <div className="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono flex items-center gap-3">
+                <RotateCcw className="w-4 h-4 animate-spin text-cyan-400 shrink-0" />
+                <span>{issuanceProgress}</span>
               </div>
             )}
 
-            <form onSubmit={handleIssueSubmit} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <form onSubmit={handleIssueCertificate} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold uppercase tracking-wider text-slate-500 mb-1">Recipient Name</label>
+                  <label
+                    htmlFor="modal-student-name"
+                    className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5"
+                  >
+                    Graduate Full Name
+                  </label>
                   <input
+                    id="modal-student-name"
                     type="text"
                     required
                     value={studentName}
                     onChange={(e) => setStudentName(e.target.value)}
-                    placeholder="e.g. Anjan Shetty"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-medium"
+                    placeholder="e.g. Maya Lin"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-navy-1000 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 min-h-[44px]"
                   />
                 </div>
-
                 <div>
-                  <label className="block font-bold uppercase tracking-wider text-slate-500 mb-1">Roll / Student ID</label>
+                  <label
+                    htmlFor="modal-student-id"
+                    className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5"
+                  >
+                    Student ID Number
+                  </label>
                   <input
+                    id="modal-student-id"
                     type="text"
                     required
                     value={studentIdentifier}
                     onChange={(e) => setStudentIdentifier(e.target.value)}
-                    placeholder="e.g. MIT-2026-CS001"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono"
+                    placeholder="e.g. MIT-2026-904"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-navy-1000 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 min-h-[44px]"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block font-bold uppercase tracking-wider text-slate-500 mb-1">Student Email</label>
-                <input
-                  type="email"
-                  required
-                  value={studentEmail}
-                  onChange={(e) => setStudentEmail(e.target.value)}
-                  placeholder="student@university.edu"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold uppercase tracking-wider text-slate-500 mb-1">Certificate Award Title</label>
-                <input
-                  type="text"
-                  required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Bachelor of Technology in AI & Data Science"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-semibold"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold uppercase tracking-wider text-slate-500 mb-1">Degree Program</label>
+                  <label
+                    htmlFor="modal-student-email"
+                    className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5"
+                  >
+                    Graduate Email
+                  </label>
                   <input
-                    type="text"
+                    id="modal-student-email"
+                    type="email"
                     required
-                    value={degree}
-                    onChange={(e) => setDegree(e.target.value)}
-                    placeholder="e.g. B.Tech"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
+                    value={studentEmail}
+                    onChange={(e) => setStudentEmail(e.target.value)}
+                    placeholder="maya@mit.edu"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-navy-1000 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 min-h-[44px]"
                   />
                 </div>
-
                 <div>
-                  <label className="block font-bold uppercase tracking-wider text-slate-500 mb-1">Issue Date</label>
+                  <label
+                    htmlFor="modal-issue-date"
+                    className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5"
+                  >
+                    Conferral Date
+                  </label>
                   <input
+                    id="modal-issue-date"
                     type="date"
                     required
                     value={issueDate}
                     onChange={(e) => setIssueDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-navy-1000 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-400 min-h-[44px]"
                   />
                 </div>
               </div>
 
-              {/* Upload Official PDF */}
               <div>
-                <label className="block font-bold uppercase tracking-wider text-slate-500 mb-1">
-                  Official Certificate PDF Document
+                <label
+                  htmlFor="modal-degree-title"
+                  className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5"
+                >
+                  Credential Title
                 </label>
                 <input
+                  id="modal-degree-title"
+                  type="text"
+                  required
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Master of Science in Artificial Intelligence"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-navy-1000 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 min-h-[44px]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="modal-department"
+                    className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5"
+                  >
+                    Department
+                  </label>
+                  <input
+                    id="modal-department"
+                    type="text"
+                    required
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-navy-1000 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 min-h-[44px]"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="modal-cgpa"
+                    className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5"
+                  >
+                    Final CGPA / Grade
+                  </label>
+                  <input
+                    id="modal-cgpa"
+                    type="text"
+                    value={cgpaOrGrade}
+                    onChange={(e) => setCgpaOrGrade(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-navy-1000 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 min-h-[44px]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="modal-pdf-file"
+                  className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5"
+                >
+                  Official PDF Certificate Document
+                </label>
+                <input
+                  id="modal-pdf-file"
                   type="file"
                   required
                   accept="application/pdf"
-                  onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) setPdfFile(e.target.files[0]);
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-navy-1000 border border-white/10 text-xs text-slate-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-cyan-500 file:text-navy-950 hover:file:bg-cyan-400 cursor-pointer min-h-[44px]"
                 />
-                <span className="text-[10px] text-slate-400 block mt-1">
-                  Raw file bytes are cryptographically hashed using SHA-256 and committed on-chain.
-                </span>
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="pt-4 flex items-center justify-end gap-3 border-t border-white/10">
                 <button
                   type="button"
-                  disabled={issuing}
                   onClick={() => setIssueModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold"
+                  className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition min-h-[44px]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={issuing || !pdfFile}
-                  className="px-6 py-2.5 rounded-xl font-bold text-white bg-brand-600 hover:bg-brand-500 disabled:opacity-50 transition shadow-glow flex items-center gap-1.5"
+                  disabled={issuing}
+                  className="px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-navy-950 bg-gradient-to-r from-cyan-400 to-sky-400 hover:from-cyan-300 hover:to-white shadow-glow-cyan transition flex items-center gap-2 disabled:opacity-50 min-h-[44px]"
                 >
-                  {issuing ? <RotateCcw className="w-4 h-4 animate-spin" /> : <FilePlus className="w-4 h-4" />}
-                  {issuing ? "Issuing..." : "Issue & Register On Blockchain"}
+                  {issuing ? "Broadcasting to Blockchain..." : "Issue & Commit to Chain"}
                 </button>
               </div>
             </form>
@@ -532,48 +624,57 @@ export const IssuerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL 2: REVOKE CERTIFICATE */}
+      {/* Revocation Modal */}
       {revokeCertId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-navy-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center gap-2 text-rose-500">
-              <AlertTriangle className="w-5 h-5" />
-              <h3 className="text-base font-bold">Confirm Certificate Revocation</h3>
-            </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300">
-              Are you sure you want to revoke certificate <strong className="font-mono text-slate-900 dark:text-white">{revokeCertId}</strong>? This action updates the immutable blockchain smart contract status to REVOKED.
-            </p>
-
-            <form onSubmit={handleRevokeSubmit} className="space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="rounded-3xl bg-navy-900 border border-rose-500/30 shadow-2xl max-w-md w-full p-6 sm:p-8 space-y-6">
+            <div className="flex items-center gap-3 text-rose-400">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center font-bold">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-                  Reason for Revocation
+                <h3 className="text-base font-extrabold text-white">
+                  Revoke Certificate
+                </h3>
+                <p className="text-xs text-slate-400 font-mono">
+                  Permanent immutable action on EVM contract
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleRevoke} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="revoke-reason-input"
+                  className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5"
+                >
+                  Official Revocation Reason
                 </label>
                 <textarea
+                  id="revoke-reason-input"
                   required
                   rows={3}
                   value={revokeReason}
                   onChange={(e) => setRevokeReason(e.target.value)}
-                  placeholder="e.g. Administrative cancellation / Academic misconduct"
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white"
+                  placeholder="e.g. Academic honor code violation, degree issued in error..."
+                  className="w-full p-3 rounded-xl bg-navy-1000 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-400"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2">
+              <div className="pt-2 flex items-center justify-end gap-3">
                 <button
                   type="button"
-                  disabled={revoking}
                   onClick={() => setRevokeCertId(null)}
-                  className="px-4 py-2 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700"
+                  className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition min-h-[44px]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={revoking || !revokeReason.trim()}
-                  className="px-5 py-2 text-xs font-bold rounded-xl text-white bg-rose-600 hover:bg-rose-500 disabled:opacity-50"
+                  disabled={revoking}
+                  className="px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-white bg-rose-600 hover:bg-rose-500 shadow-glow-rose transition flex items-center gap-2 disabled:opacity-50 min-h-[44px]"
                 >
-                  {revoking ? "Revoking On-Chain..." : "Confirm Revocation"}
+                  {revoking ? "Revoking on EVM Chain..." : "Confirm Permanent Revocation"}
                 </button>
               </div>
             </form>
@@ -581,36 +682,52 @@ export const IssuerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL 3: VIEW QR CODE */}
+      {/* QR Code Inspection Modal */}
       {selectedQrCert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-navy-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-sm w-full p-6 text-center space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">{selectedQrCert.certificateId}</span>
-              <button onClick={() => setSelectedQrCert(null)} className="text-slate-400 hover:text-slate-200">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="rounded-3xl bg-navy-900 border border-white/10 shadow-2xl max-w-sm w-full p-6 text-center space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <span className="text-xs font-mono font-bold text-cyan-400">
+                {selectedQrCert.certificateId}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedQrCert(null)}
+                aria-label="Close QR Modal"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white min-h-[36px] min-w-[36px] flex items-center justify-center"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-4 bg-white rounded-2xl inline-block shadow-card">
+            <div className="p-4 bg-white rounded-2xl mx-auto w-fit shadow-glow">
               <QRCodeSVG
                 value={`${window.location.origin}/verify/${selectedQrCert.certificateId}`}
-                size={200}
+                size={180}
                 level="H"
-                includeMargin
+                includeMargin={true}
               />
             </div>
 
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Scan with any mobile camera or QR reader to verify this certificate on-chain.
-            </p>
+            <div className="space-y-1">
+              <div className="text-sm font-bold text-white">
+                {selectedQrCert.studentProfile?.fullName || "Graduate"}
+              </div>
+              <div className="text-xs text-slate-400">
+                {selectedQrCert.title}
+              </div>
+            </div>
 
-            <button
-              onClick={() => setSelectedQrCert(null)}
-              className="w-full py-2.5 rounded-xl font-bold text-xs bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-            >
-              Close
-            </button>
+            <div className="pt-2">
+              <Link
+                to={`/verify/${selectedQrCert.certificateId}`}
+                target="_blank"
+                className="w-full py-2.5 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-navy-950 transition flex items-center justify-center gap-2 min-h-[44px]"
+              >
+                <span>Open Verification Page</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
         </div>
       )}

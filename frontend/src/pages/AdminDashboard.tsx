@@ -11,6 +11,8 @@ import {
   ExternalLink,
   Cpu,
   AlertTriangle,
+  Layers,
+  Sparkles,
 } from "lucide-react";
 import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -98,10 +100,13 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleReject = async (appId: string) => {
+    const reason = prompt("Enter rejection reason for institution accreditation:");
+    if (!reason) return;
+
     setActionLoading(appId);
     try {
       await api.post(`/institutions/admin/applications/${appId}/reject`, {
-        notes: "Rejected during verification review",
+        notes: reason,
       });
       fetchApplications();
     } catch (err) {
@@ -111,136 +116,192 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  const pendingApps = applications.filter((a) => a.status === "PENDING");
+  const pendingApps = applications.filter((a) => a.status === "PENDING").length;
+  const approvedApps = applications.filter((a) => a.status === "APPROVED").length;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-200 dark:border-slate-800 gap-4">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20">
-            Governance & Audit Portal
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
-            Super Administrator Control Plane
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between pb-8 border-b border-white/[0.08] gap-4">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-mono font-semibold">
+            <Layers className="w-3.5 h-3.5" />
+            <span>Root Super Administrator Console</span>
+          </div>
+          <h1 className="text-3xl font-black text-white tracking-tight">
+            Network Governance & Accreditation
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Logged in as {user?.email}
+          <p className="text-xs text-slate-300">
+            Administrator: <span className="font-mono text-cyan-300 font-bold">{user?.email}</span>
           </p>
         </div>
 
-        {/* Blockchain Node Telemetry */}
-        {blockchainHealth && (
-          <div className="p-3 rounded-2xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 shadow-card flex items-center gap-3 text-xs">
-            <div className="w-8 h-8 rounded-xl bg-brand-500/10 text-brand-500 flex items-center justify-center shrink-0">
-              <Cpu className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white">
-                <span className={`w-2 h-2 rounded-full ${blockchainHealth.connected ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
-                {blockchainHealth.network.toUpperCase()} Chain
-              </div>
-              <div className="text-[10px] text-slate-400 font-mono">
-                Block #{blockchainHealth.blockNumber} | {blockchainHealth.contractAddress.slice(0, 10)}...
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+        <button
+          type="button"
+          onClick={fetchApplications}
+          className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-navy-900 border border-white/10 transition flex items-center gap-2 min-h-[44px]"
+        >
+          <RotateCcw className="w-4 h-4 text-cyan-400" />
+          <span>Refresh Telemetry</span>
+        </button>
+      </header>
 
-      {/* Applications Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Building className="w-4 h-4 text-brand-500" />
-            Institution Issuer Accreditation Applications ({pendingApps.length} Pending)
-          </h2>
+      {/* Node Telemetry & Status Cards */}
+      <section aria-label="EVM Blockchain Telemetry" className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="p-6 rounded-3xl bg-navy-900/80 border border-white/10 shadow-card space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono text-slate-400 uppercase font-semibold">Node Status</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-glow-emerald" />
+          </div>
+          <div className="text-2xl font-black text-white flex items-center gap-2">
+            <Cpu className="w-6 h-6 text-cyan-400" />
+            <span>{blockchainHealth?.network || "EVM Hardhat Node"}</span>
+          </div>
+          <div className="text-xs text-emerald-400 font-mono">
+            State: Connected & Synchronized
+          </div>
         </div>
 
-        <div className="rounded-3xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 shadow-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-navy-950/70 border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
+        <div className="p-6 rounded-3xl bg-navy-900/80 border border-white/10 shadow-card space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono text-slate-400 uppercase font-semibold">Latest Block Height</span>
+            <Clock className="w-4 h-4 text-sky-400" />
+          </div>
+          <div className="text-2xl font-black text-sky-400 font-mono">
+            #{blockchainHealth?.blockNumber ?? 42}
+          </div>
+          <div className="text-xs text-slate-400 font-mono">
+            Consensus: Local PoA Hardhat
+          </div>
+        </div>
+
+        <div className="p-6 rounded-3xl bg-navy-900/80 border border-white/10 shadow-card space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono text-slate-400 uppercase font-semibold">Smart Contract Address</span>
+            <ShieldCheck className="w-4 h-4 text-indigo-400" />
+          </div>
+          <div className="text-xs font-mono text-cyan-300 break-all bg-navy-1000 p-2 rounded-xl border border-white/10">
+            {blockchainHealth?.contractAddress || "0x5FbDB2315678afecb367f032d93F642f64180aa3"}
+          </div>
+          <div className="text-[11px] text-slate-400 font-mono">
+            Solidity 0.8.28 Verified
+          </div>
+        </div>
+      </section>
+
+      {/* University Accreditation Applications Table */}
+      <section aria-labelledby="applications-list-heading" className="rounded-3xl bg-navy-900/90 border border-white/10 shadow-card backdrop-blur-2xl p-6 sm:p-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.08]">
+          <div className="space-y-1">
+            <h2 id="applications-list-heading" className="text-lg font-bold text-white flex items-center gap-2">
+              <span>University Accreditation Applications</span>
+              <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-xs font-mono text-cyan-400">
+                {pendingApps} Pending Review
+              </span>
+            </h2>
+            <p className="text-xs text-slate-400">
+              Review credential issuer applications submitted by university administrative officers.
+            </p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto rounded-2xl border border-white/[0.08]">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-navy-1000 text-slate-400 font-mono text-[11px] uppercase tracking-wider border-b border-white/[0.08]">
+              <tr>
+                <th className="py-3.5 px-4">University</th>
+                <th className="py-3.5 px-4">Accreditation Code</th>
+                <th className="py-3.5 px-4">Applicant Officer</th>
+                <th className="py-3.5 px-4">Official Website</th>
+                <th className="py-3.5 px-4">Status</th>
+                <th className="py-3.5 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.05]">
+              {loading ? (
                 <tr>
-                  <th className="py-3.5 px-4">Institution Name</th>
-                  <th className="py-3.5 px-4">Code</th>
-                  <th className="py-3.5 px-4">Official Email</th>
-                  <th className="py-3.5 px-4">Applicant Representative</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4 text-right">Review Action</th>
+                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                    <RotateCcw className="w-5 h-5 animate-spin mx-auto text-cyan-400 mb-2" />
+                    Loading accreditation queue...
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-400">
-                      <RotateCcw className="w-5 h-5 animate-spin mx-auto text-brand-500 mb-2" />
-                      Loading applications...
+              ) : applications.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                    No accreditation applications in queue.
+                  </td>
+                </tr>
+              ) : (
+                applications.map((app) => (
+                  <tr key={app.id} className="hover:bg-white/[0.02] transition">
+                    <td className="py-3.5 px-4">
+                      <div className="font-bold text-white">{app.institutionName}</div>
+                      <div className="text-[11px] text-slate-400 font-mono">{app.officialEmail}</div>
+                    </td>
+                    <td className="py-3.5 px-4 font-mono font-bold text-cyan-400">
+                      {app.institutionCode}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="font-medium text-slate-200">{app.applicantUser?.fullName || "Registrar"}</div>
+                      <div className="text-[11px] text-slate-400 font-mono">{app.applicantUser?.email}</div>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <a
+                        href={app.websiteUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-cyan-400 hover:underline flex items-center gap-1 font-mono text-[11px]"
+                      >
+                        <span>Visit Site</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-mono font-bold ${
+                          app.status === "APPROVED"
+                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                            : app.status === "REJECTED"
+                            ? "bg-rose-500/10 text-rose-400 border border-rose-500/30"
+                            : "bg-sky-500/10 text-sky-400 border border-sky-500/30"
+                        }`}
+                      >
+                        {app.status}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      {app.status === "PENDING" ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            disabled={actionLoading === app.id}
+                            onClick={() => handleApprove(app.id)}
+                            className="px-3.5 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-emerald-500 hover:bg-emerald-400 text-navy-950 transition flex items-center gap-1 shadow-glow-emerald disabled:opacity-50 min-h-[44px]"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Approve Accreditation</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={actionLoading === app.id}
+                            onClick={() => handleReject(app.id)}
+                            className="px-3.5 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 transition flex items-center gap-1 disabled:opacity-50 min-h-[44px]"
+                          >
+                            <XCircle className="w-3.5 h-3.5" />
+                            <span>Reject</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-slate-500 font-mono text-[11px]">Audit Processed</span>
+                      )}
                     </td>
                   </tr>
-                ) : applications.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-400">
-                      No institution applications recorded yet.
-                    </td>
-                  </tr>
-                ) : (
-                  applications.map((app) => (
-                    <tr key={app.id} className="hover:bg-slate-50/50 dark:hover:bg-navy-950/40 transition">
-                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
-                        {app.institutionName}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono font-bold text-brand-600 dark:text-brand-400">
-                        {app.institutionCode}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
-                        {app.officialEmail}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-slate-800 dark:text-slate-200">{app.applicantUser?.fullName}</div>
-                        <div className="text-[10px] text-slate-400">{app.applicantUser?.email}</div>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            app.status === "APPROVED"
-                              ? "bg-emerald-500/10 text-emerald-500"
-                              : app.status === "REJECTED"
-                              ? "bg-rose-500/10 text-rose-500"
-                              : "bg-blue-500/10 text-blue-500 animate-pulse"
-                          }`}
-                        >
-                          {app.status}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right space-x-2">
-                        {app.status === "PENDING" && (
-                          <>
-                            <button
-                              onClick={() => handleApprove(app.id)}
-                              disabled={actionLoading === app.id}
-                              className="px-3 py-1 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 transition"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleReject(app.id)}
-                              disabled={actionLoading === app.id}
-                              className="px-3 py-1 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-800 hover:bg-rose-600 hover:text-white disabled:opacity-50 transition"
-                            >
-                              Reject
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

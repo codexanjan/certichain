@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#040711" />
+      <stop offset="50%" stop-color="#0B132B" />
+      <stop offset="100%" stop-color="#050B1A" />
+    </linearGradient>
+    <linearGradient id="neonCyan" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F2FE" />
+      <stop offset="100%" stop-color="#4FACFE" />
+    </linearGradient>
+    <linearGradient id="neonIndigo" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#A855F7" />
+    </linearGradient>
+    <linearGradient id="neonEmerald" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)" />
+
+  <!-- Grid lines -->
+  <g stroke="rgba(255,255,255,0.04)" stroke-width="1">
+    <path d="M0 70 H1200 M0 140 H1200 M0 210 H1200 M0 280 H1200 M0 350 H1200 M0 420 H1200 M0 490 H1200 M0 560 H1200" />
+    <path d="M100 0 V630 M200 0 V630 M300 0 V630 M400 0 V630 M500 0 V630 M600 0 V630 M700 0 V630 M800 0 V630 M900 0 V630 M1000 0 V630 M1100 0 V630" />
+  </g>
+
+  <!-- Title & Header -->
+  <text x="600" y="70" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-weight="800" font-size="36" fill="#F8FAFC" letter-spacing="-0.02em">
+    CertiChain Platform Architecture
+  </text>
+  <text x="600" y="102" text-anchor="middle" font-family="'Inter', system-ui, sans-serif" font-weight="500" font-size="16" fill="#94A3B8">
+    Decentralized Academic Credential Verification • Zero PII On-Chain • Real-Time Fraud Analysis
+  </text>
+
+  <!-- Stage 1: Issuance -->
+  <g transform="translate(60, 160)">
+    <rect width="240" height="340" rx="16" fill="rgba(15, 23, 42, 0.75)" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1.5" />
+    <circle cx="120" cy="48" r="26" fill="rgba(56, 189, 248, 0.15)" stroke="#38BDF8" stroke-width="1.5" />
+    <text x="120" y="55" text-anchor="middle" font-family="system-ui" font-size="20" fill="#38BDF8">🏛️</text>
+    <text x="120" y="100" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="18" fill="#F8FAFC">1. Institution Issuance</text>
+    <text x="120" y="125" text-anchor="middle" font-family="monospace" font-size="12" fill="#38BDF8">MIT / Stanford Portal</text>
+    <rect x="20" y="145" width="200" height="170" rx="8" fill="rgba(0,0,0,0.3)" />
+    <text x="30" y="172" font-family="monospace" font-size="11" fill="#94A3B8">• Registrar Signs In</text>
+    <text x="30" y="196" font-family="monospace" font-size="11" fill="#94A3B8">• Student Record Attached</text>
+    <text x="30" y="220" font-family="monospace" font-size="11" fill="#94A3B8">• PDF Raw-Bytes Loaded</text>
+    <text x="30" y="244" font-family="monospace" font-size="11" fill="#94A3B8">• Compute SHA-256 Digest</text>
+    <text x="30" y="268" font-family="monospace" font-size="11" fill="#38BDF8">• Secure Storage Persisted</text>
+    <text x="30" y="292" font-family="monospace" font-size="11" fill="#38BDF8">• Socket Status Broadcast</text>
+  </g>
+
+  <!-- Arrow 1 to 2 -->
+  <path d="M305 330 H350" stroke="#00F2FE" stroke-width="2.5" stroke-dasharray="4,4" />
+  <polygon points="352,330 344,325 344,335" fill="#00F2FE" />
+
+  <!-- Stage 2: EVM Registry -->
+  <g transform="translate(360, 160)">
+    <rect width="240" height="340" rx="16" fill="rgba(15, 23, 42, 0.75)" stroke="rgba(99, 102, 241, 0.4)" stroke-width="1.5" />
+    <circle cx="120" cy="48" r="26" fill="rgba(99, 102, 241, 0.15)" stroke="#6366F1" stroke-width="1.5" />
+    <text x="120" y="55" text-anchor="middle" font-family="system-ui" font-size="20" fill="#6366F1">⛓️</text>
+    <text x="120" y="100" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="18" fill="#F8FAFC">2. Smart Contract</text>
+    <text x="120" y="125" text-anchor="middle" font-family="monospace" font-size="12" fill="#818CF8">CertificateRegistry.sol</text>
+    <rect x="20" y="145" width="200" height="170" rx="8" fill="rgba(0,0,0,0.3)" />
+    <text x="30" y="172" font-family="monospace" font-size="11" fill="#94A3B8">• bytes32 certKey</text>
+    <text x="30" y="196" font-family="monospace" font-size="11" fill="#94A3B8">• bytes32 documentHash</text>
+    <text x="30" y="220" font-family="monospace" font-size="11" fill="#94A3B8">• address issuerWallet</text>
+    <text x="30" y="244" font-family="monospace" font-size="11" fill="#94A3B8">• uint256 blockTimestamp</text>
+    <text x="30" y="268" font-family="monospace" font-size="11" fill="#818CF8">• ZERO PII on Blockchain</text>
+    <text x="30" y="292" font-family="monospace" font-size="11" fill="#818CF8">• Immutable State Root</text>
+  </g>
+
+  <!-- Arrow 2 to 3 -->
+  <path d="M605 330 H650" stroke="#6366F1" stroke-width="2.5" stroke-dasharray="4,4" />
+  <polygon points="652,330 644,325 644,335" fill="#6366F1" />
+
+  <!-- Stage 3: Dynamic QR & Distribution -->
+  <g transform="translate(660, 160)">
+    <rect width="240" height="340" rx="16" fill="rgba(15, 23, 42, 0.75)" stroke="rgba(168, 85, 247, 0.4)" stroke-width="1.5" />
+    <circle cx="120" cy="48" r="26" fill="rgba(168, 85, 247, 0.15)" stroke="#A855F7" stroke-width="1.5" />
+    <text x="120" y="55" text-anchor="middle" font-family="system-ui" font-size="20" fill="#A855F7">📱</text>
+    <text x="120" y="100" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="18" fill="#F8FAFC">3. Dynamic QR Engine</text>
+    <text x="120" y="125" text-anchor="middle" font-family="monospace" font-size="12" fill="#C084FC">Instant Verification URL</text>
+    <rect x="20" y="145" width="200" height="170" rx="8" fill="rgba(0,0,0,0.3)" />
+    <text x="30" y="172" font-family="monospace" font-size="11" fill="#94A3B8">• QR Embedded in PDF</text>
+    <text x="30" y="196" font-family="monospace" font-size="11" fill="#94A3B8">• Direct Link to /verify</text>
+    <text x="30" y="220" font-family="monospace" font-size="11" fill="#94A3B8">• Student Digital Wallet</text>
+    <text x="30" y="244" font-family="monospace" font-size="11" fill="#94A3B8">• Linked LinkedIn / Resume</text>
+    <text x="30" y="268" font-family="monospace" font-size="11" fill="#C084FC">• One-Click Recruiter Scan</text>
+    <text x="30" y="292" font-family="monospace" font-size="11" fill="#C084FC">• Zero-Friction Audit</text>
+  </g>
+
+  <!-- Arrow 3 to 4 -->
+  <path d="M905 330 H950" stroke="#10B981" stroke-width="2.5" stroke-dasharray="4,4" />
+  <polygon points="952,330 944,325 944,335" fill="#10B981" />
+
+  <!-- Stage 4: Verification & Fraud Detection -->
+  <g transform="translate(960, 160)">
+    <rect width="180" height="340" rx="16" fill="rgba(15, 23, 42, 0.75)" stroke="rgba(16, 185, 129, 0.4)" stroke-width="1.5" />
+    <circle cx="90" cy="48" r="26" fill="rgba(16, 185, 129, 0.15)" stroke="#10B981" stroke-width="1.5" />
+    <text x="90" y="55" text-anchor="middle" font-family="system-ui" font-size="20" fill="#10B981">🛡️</text>
+    <text x="90" y="100" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="16" fill="#F8FAFC">4. Proof Engine</text>
+    <text x="90" y="125" text-anchor="middle" font-family="monospace" font-size="11" fill="#34D399">Sub-Second Audit</text>
+    <rect x="15" y="145" width="150" height="170" rx="8" fill="rgba(0,0,0,0.3)" />
+    <text x="25" y="172" font-family="monospace" font-size="10" fill="#10B981">✓ VERIFIED (0-15)</text>
+    <text x="25" y="196" font-family="monospace" font-size="10" fill="#F43F5E">⚠ TAMPERED (80+)</text>
+    <text x="25" y="220" font-family="monospace" font-size="10" fill="#F59E0B">✗ REVOKED (100)</text>
+    <text x="25" y="244" font-family="monospace" font-size="10" fill="#94A3B8">? NOT FOUND</text>
+    <text x="25" y="268" font-family="monospace" font-size="10" fill="#38BDF8">⟳ PENDING TX</text>
+    <text x="25" y="292" font-family="monospace" font-size="10" fill="#94A3B8">⊘ CHAIN OFFLINE</text>
+  </g>
+
+  <!-- Bottom Badges / Protocol Pillars -->
+  <g transform="translate(60, 530)">
+    <rect width="1080" height="60" rx="12" fill="rgba(15, 23, 42, 0.6)" stroke="rgba(255,255,255,0.08)" />
+    <text x="140" y="36" text-anchor="middle" font-family="system-ui" font-weight="600" font-size="13" fill="#38BDF8">🔒 SHA-256 Byte Invariance</text>
+    <text x="410" y="36" text-anchor="middle" font-family="system-ui" font-weight="600" font-size="13" fill="#818CF8">⛓️ Hardhat / EVM Solidity</text>
+    <text x="680" y="36" text-anchor="middle" font-family="system-ui" font-weight="600" font-size="13" fill="#C084FC">🛡️ Rule-Based Risk Engine</text>
+    <text x="950" y="36" text-anchor="middle" font-family="system-ui" font-weight="600" font-size="13" fill="#34D399">🌐 100% GDPR &amp; FERPA Safe</text>
+  </g>
+</svg>

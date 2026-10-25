@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import confetti from "canvas-confetti";
 import {
   Search,
   Upload,
@@ -18,6 +20,9 @@ import {
   Building,
   User,
   Hash,
+  Fingerprint,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { api } from "../services/api";
 import { VerificationResult } from "../types";
@@ -31,18 +36,53 @@ export const VerifyPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"id" | "upload" | "qr">("id");
   const [certIdInput, setCertIdInput] = useState(routeCertId || "");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileHashPreview, setFileHashPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const resultRef = React.useRef<HTMLDivElement>(null);
 
-  // If URL contains certificateId, run verification immediately
+  // Auto-verify if certificateId provided in URL
   useEffect(() => {
     if (routeCertId) {
       setCertIdInput(routeCertId);
       performVerificationById(routeCertId);
     }
   }, [routeCertId]);
+
+  // Client-side SHA-256 computation preview for uploaded file
+  useEffect(() => {
+    if (!selectedFile) {
+      setFileHashPreview(null);
+      return;
+    }
+
+    const computeHash = async () => {
+      try {
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+        setFileHashPreview(hashHex);
+      } catch (err) {
+        console.error("Client SHA-256 calculation failed", err);
+      }
+    };
+
+    computeHash();
+  }, [selectedFile]);
+
+  const triggerCelebration = (status: string) => {
+    if (status === "VERIFIED") {
+      confetti({
+        particleCount: 90,
+        spread: 80,
+        origin: { y: 0.55 },
+        colors: ["#00F2FE", "#38BDF8", "#10B981", "#6366F1"],
+      });
+    }
+  };
 
   const performVerificationById = async (id: string) => {
     if (!id.trim()) return;
@@ -55,6 +95,10 @@ export const VerifyPage: React.FC = () => {
         `/verify/${encodeURIComponent(id.trim())}`
       );
       setResult(res.data);
+      triggerCelebration(res.data.status);
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 150);
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Verification request failed");
     } finally {
@@ -72,7 +116,7 @@ export const VerifyPage: React.FC = () => {
   const handleFileUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFile) {
-      setErrorMsg("Please select a PDF file to verify.");
+      setErrorMsg("Please select a PDF certificate to verify.");
       return;
     }
 
@@ -92,6 +136,10 @@ export const VerifyPage: React.FC = () => {
         formData
       );
       setResult(res.data);
+      triggerCelebration(res.data.status);
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 150);
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Document upload verification failed");
     } finally {
@@ -100,320 +148,423 @@ export const VerifyPage: React.FC = () => {
   };
 
   const handleCopyLink = () => {
-    if (result?.certificateId) {
-      const url = `${window.location.origin}/verify/${result.certificateId}`;
-      navigator.clipboard.writeText(url);
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2000);
+    if (!result?.certificateId) return;
+    const url = `${window.location.origin}/verify/${result.certificateId}`;
+    navigator.clipboard.writeText(url);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!result?.certificateId) return;
+    try {
+      const blob = await api.get<Blob>(`/certificates/${result.certificateId}/download`);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${result.certificateId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert("Failed to download official certificate PDF.");
     }
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
-      {/* Header */}
-      <div className="text-center space-y-3">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-600 dark:text-brand-400 text-xs font-bold tracking-wide">
+    <div className="min-h-screen py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-12">
+      {/* Header Banner */}
+      <header className="text-center max-w-3xl mx-auto space-y-4">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-mono font-semibold">
           <ShieldCheck className="w-3.5 h-3.5" />
-          <span>Independent Blockchain Integrity Inspection</span>
+          <span>EVM Cryptographic Audit Terminal</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          Verify Academic Certificate
+        <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+          Verify Academic Credentials
         </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-          Authenticate credentials directly against immutable EVM smart contract records and detect byte-level PDF alterations.
+        <p className="text-sm text-slate-300 leading-relaxed">
+          Validate authentic diplomas and transcripts directly against EVM smart contract state and raw binary SHA-256 byte digests with zero gas fees.
         </p>
-      </div>
+      </header>
 
-      {/* Tabs */}
-      <div className="flex items-center justify-center">
-        <div className="inline-flex p-1.5 rounded-2xl bg-slate-100 dark:bg-navy-900 border border-slate-200 dark:border-slate-800">
+      {/* Verification Query Console Card */}
+      <section aria-labelledby="verification-form-title" className="max-w-3xl mx-auto rounded-3xl bg-navy-900/90 border border-white/10 backdrop-blur-2xl shadow-card p-6 sm:p-8 space-y-6">
+        <h2 id="verification-form-title" className="sr-only">Certificate Verification Method</h2>
+        {/* Tab Selection Switcher */}
+        <div className="grid grid-cols-3 p-1 rounded-2xl bg-navy-1000 border border-white/[0.08]" role="tablist">
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "id"}
             onClick={() => {
               setActiveTab("id");
               setErrorMsg(null);
             }}
-            className={`px-5 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2 ${
+            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 min-h-[44px] ${
               activeTab === "id"
-                ? "bg-white dark:bg-brand-600 text-brand-600 dark:text-white shadow-sm"
-                : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                ? "bg-cyan-500 text-navy-950 shadow-glow-cyan"
+                : "text-slate-400 hover:text-white"
             }`}
           >
             <Search className="w-3.5 h-3.5" />
-            Certificate ID Lookup
+            <span>Certificate ID / Hash</span>
           </button>
+
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "upload"}
             onClick={() => {
               setActiveTab("upload");
               setErrorMsg(null);
             }}
-            className={`px-5 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2 ${
+            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 min-h-[44px] ${
               activeTab === "upload"
-                ? "bg-white dark:bg-brand-600 text-brand-600 dark:text-white shadow-sm"
-                : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                ? "bg-cyan-500 text-navy-950 shadow-glow-cyan"
+                : "text-slate-400 hover:text-white"
             }`}
           >
             <Upload className="w-3.5 h-3.5" />
-            Upload PDF Document
+            <span>Upload PDF File</span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "qr"}
+            onClick={() => {
+              setActiveTab("qr");
+              setErrorMsg(null);
+            }}
+            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 min-h-[44px] ${
+              activeTab === "qr"
+                ? "bg-cyan-500 text-navy-950 shadow-glow-cyan"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <QrCode className="w-3.5 h-3.5" />
+            <span>QR Scanner</span>
           </button>
         </div>
-      </div>
 
-      {/* Verification Inputs Form */}
-      <div className="max-w-2xl mx-auto rounded-3xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-card">
+        {/* Tab 1: Certificate ID / Hash Lookup */}
         {activeTab === "id" && (
           <form onSubmit={handleIdSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                Certificate Identifier
+              <label
+                htmlFor="verify-cert-id-input"
+                className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-2"
+              >
+                Certificate Identifier or SHA-256 Digest
               </label>
               <div className="relative">
-                <Search className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-cyan-400 pointer-events-none" />
                 <input
+                  id="verify-cert-id-input"
                   type="text"
+                  required
                   value={certIdInput}
                   onChange={(e) => setCertIdInput(e.target.value)}
-                  placeholder="e.g. CERT-2026-000123"
-                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 text-sm font-mono text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-500"
+                  placeholder="e.g. CERT-2026-000789 or 8c4d7a9f..."
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-navy-1000 border border-white/10 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 min-h-[44px]"
                 />
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading || !certIdInput.trim()}
-              className="w-full py-3 rounded-xl font-bold text-sm bg-brand-600 hover:bg-brand-500 text-white disabled:opacity-50 transition shadow-glow flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <RotateCcw className="w-4 h-4 animate-spin" />
-                  Inspecting Blockchain Records...
-                </>
-              ) : (
-                "Verify Authenticity"
-              )}
-            </button>
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-slate-400 text-[11px]">Instant Test:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCertIdInput("CERT-2026-000789");
+                    performVerificationById("CERT-2026-000789");
+                  }}
+                  className="px-2.5 py-1 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[11px] transition"
+                >
+                  MIT Verified Degree
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCertIdInput("CERT-2026-000456");
+                    performVerificationById("CERT-2026-000456");
+                  }}
+                  className="px-2.5 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 text-[11px] transition"
+                >
+                  Revoked Certificate
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || !certIdInput.trim()}
+                className="px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-cyan-400 to-sky-400 hover:from-cyan-300 hover:to-white text-navy-950 shadow-glow-cyan transition flex items-center gap-2 shrink-0 disabled:opacity-50 min-h-[44px]"
+              >
+                {loading ? (
+                  <>
+                    <RotateCcw className="w-4 h-4 animate-spin" />
+                    <span>Querying Blockchain...</span>
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-4 h-4" />
+                    <span>Verify by Certificate ID</span>
+                  </>
+                )}
+              </button>
+            </div>
           </form>
         )}
 
+        {/* Tab 2: PDF File Upload */}
         {activeTab === "upload" && (
           <form onSubmit={handleFileUploadSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                Upload Certificate PDF
+              <label
+                htmlFor="verify-file-input"
+                className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-2"
+              >
+                Official PDF Document File
               </label>
-              <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-center hover:border-brand-500 transition cursor-pointer bg-slate-50 dark:bg-navy-950">
+
+              <div className="relative border-2 border-dashed border-white/15 hover:border-cyan-400/50 rounded-2xl p-8 text-center bg-navy-1000/60 transition cursor-pointer">
                 <input
+                  id="verify-file-input"
                   type="file"
                   accept="application/pdf"
-                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                  className="hidden"
-                  id="pdf-upload-input"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) setSelectedFile(e.target.files[0]);
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
-                <label htmlFor="pdf-upload-input" className="cursor-pointer space-y-2 block">
-                  <div className="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center mx-auto">
-                    <FileText className="w-6 h-6" />
+                <div className="space-y-2 pointer-events-none">
+                  <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center mx-auto">
+                    <Upload className="w-6 h-6" />
                   </div>
-                  <div className="text-xs text-slate-600 dark:text-slate-300 font-medium">
-                    {selectedFile ? (
-                      <span className="font-bold text-brand-600 dark:text-brand-400">{selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)</span>
-                    ) : (
-                      <>
-                        <span className="font-bold text-brand-500">Click to upload</span> or drag and drop official PDF
-                      </>
-                    )}
+                  <div className="text-xs font-bold text-white">
+                    {selectedFile ? selectedFile.name : "Drag & drop or browse to choose PDF file"}
                   </div>
-                  <p className="text-[11px] text-slate-400">PDF up to 10MB. Raw bytes will be hashed client & server-side.</p>
-                </label>
+                  <div className="text-[11px] text-slate-400">
+                    Calculates raw binary byte digest before matching with EVM registry
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
-                Optional: Certificate ID (if cross-referencing specific ID)
-              </label>
-              <input
-                type="text"
-                value={certIdInput}
-                onChange={(e) => setCertIdInput(e.target.value)}
-                placeholder="CERT-2026-XXXX (Optional)"
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-900 dark:text-white"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || !selectedFile}
-              className="w-full py-3 rounded-xl font-bold text-sm bg-brand-600 hover:bg-brand-500 text-white disabled:opacity-50 transition shadow-glow flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <RotateCcw className="w-4 h-4 animate-spin" />
-                  Computing Byte SHA-256 & Matching Chain...
-                </>
-              ) : (
-                "Verify File Integrity"
-              )}
-            </button>
-          </form>
-        )}
-
-        {errorMsg && (
-          <div className="mt-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs font-medium text-center flex items-center justify-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Verification Result Display */}
-      {result && (
-        <div className="space-y-6 animate-fade-in">
-          {/* Top Status Banner */}
-          <div className="rounded-3xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-card space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-100 dark:border-slate-800 gap-4">
-              <div>
-                <span className="text-xs font-mono text-slate-400 block">Certificate Identifier</span>
-                <span className="text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-white">
-                  {result.certificateId || "N/A"}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <StatusBadge status={result.status} size="lg" />
-                {result.certificateId && (
-                  <button
-                    onClick={handleCopyLink}
-                    className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand-500 transition"
-                    title="Share Verification Link"
-                  >
-                    {copiedLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Explanation Message */}
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-100 dark:border-slate-800 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-              <strong className="text-slate-900 dark:text-white block mb-1">Audit Finding:</strong>
-              {result.message}
-            </div>
-
-            {/* Certificate Details If Record Exists */}
-            {result.certificate && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-100 dark:border-slate-800 space-y-1">
-                  <span className="text-slate-400 flex items-center gap-1.5 font-medium">
-                    <User className="w-3.5 h-3.5 text-brand-500" /> Recipient Name
-                  </span>
-                  <span className="text-base font-bold text-slate-900 dark:text-white block">
-                    {result.certificate.studentName}
-                  </span>
+            {/* Client-Side Live SHA-256 Preview */}
+            {fileHashPreview && (
+              <div className="p-3.5 rounded-xl bg-navy-1000 border border-white/10 font-mono text-xs space-y-1">
+                <div className="flex items-center justify-between text-slate-400 text-[10px]">
+                  <span>// CLIENT-SIDE SHA-256 DIGEST</span>
+                  <span className="text-cyan-400 font-bold">READY</span>
                 </div>
-
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-100 dark:border-slate-800 space-y-1">
-                  <span className="text-slate-400 flex items-center gap-1.5 font-medium">
-                    <Building className="w-3.5 h-3.5 text-brand-500" /> Issuing Institution
-                  </span>
-                  <span className="text-base font-bold text-slate-900 dark:text-white block">
-                    {result.certificate.institutionName} ({result.certificate.institutionCode})
-                  </span>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-100 dark:border-slate-800 space-y-1 md:col-span-2">
-                  <span className="text-slate-400 flex items-center gap-1.5 font-medium">
-                    <Layers className="w-3.5 h-3.5 text-brand-500" /> Qualification & Degree
-                  </span>
-                  <span className="text-base font-extrabold text-brand-600 dark:text-brand-400 block">
-                    {result.certificate.title}
-                  </span>
-                  {result.certificate.department && (
-                    <span className="text-xs text-slate-500 block">Department: {result.certificate.department}</span>
-                  )}
-                </div>
-
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-100 dark:border-slate-800 space-y-1">
-                  <span className="text-slate-400 flex items-center gap-1.5 font-medium">
-                    <Calendar className="w-3.5 h-3.5 text-brand-500" /> Issue Date
-                  </span>
-                  <span className="font-semibold text-slate-900 dark:text-white block">
-                    {new Date(result.certificate.issueDate).toLocaleDateString(undefined, {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </span>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-100 dark:border-slate-800 space-y-1">
-                  <span className="text-slate-400 flex items-center gap-1.5 font-medium">
-                    <Hash className="w-3.5 h-3.5 text-brand-500" /> Document Integrity
-                  </span>
-                  <span className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
-                    {result.integrity.hashMatched ? (
-                      <span className="text-emerald-500 font-bold flex items-center gap-1">
-                        <Check className="w-4 h-4" /> SHA-256 Matched
-                      </span>
-                    ) : (
-                      <span className="text-rose-500 font-bold flex items-center gap-1">
-                        <AlertTriangle className="w-4 h-4" /> Hash Mismatch (Altered)
-                      </span>
-                    )}
-                  </span>
+                <div className="text-cyan-300 break-all text-[11px]">
+                  {fileHashPreview}
                 </div>
               </div>
             )}
 
-            {/* Cryptographic Hashes & Blockchain Proof */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Cpu className="w-4 h-4 text-brand-500" />
-                Immutable Blockchain Verification Telemetry
-              </h4>
-
-              <div className="space-y-2 text-xs font-mono">
-                {result.integrity.registeredHash && (
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-navy-950 border border-slate-100 dark:border-slate-800">
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Registered On-Chain SHA-256 Digest:
-                    </span>
-                    <span className="text-brand-600 dark:text-brand-400 break-all select-all font-bold">
-                      {result.integrity.registeredHash}
-                    </span>
-                  </div>
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                disabled={loading || !selectedFile}
+                className="px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-cyan-400 to-sky-400 hover:from-cyan-300 hover:to-white text-navy-950 shadow-glow-cyan transition flex items-center gap-2 shrink-0 disabled:opacity-50 min-h-[44px]"
+              >
+                {loading ? (
+                  <>
+                    <RotateCcw className="w-4 h-4 animate-spin" />
+                    <span>Verifying Raw Bytes...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-4 h-4" />
+                    <span>Verify PDF File Bytes</span>
+                  </>
                 )}
+              </button>
+            </div>
+          </form>
+        )}
 
-                {result.integrity.submittedHash && result.integrity.submittedHash !== result.integrity.registeredHash && (
-                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
-                    <span className="text-[10px] text-rose-500 uppercase font-semibold block">
-                      Submitted File SHA-256 Digest:
-                    </span>
-                    <span className="text-rose-500 break-all select-all font-bold">
-                      {result.integrity.submittedHash}
-                    </span>
+        {/* Tab 3: QR Scanner */}
+        {activeTab === "qr" && (
+          <div className="space-y-4 text-center py-4">
+            <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center mx-auto">
+              <QrCode className="w-7 h-7" />
+            </div>
+            <div className="space-y-1 max-w-sm mx-auto">
+              <h3 className="text-sm font-bold text-white">Camera QR Scanner Active</h3>
+              <p className="text-xs text-slate-400">
+                Point your mobile device camera at the tamper-resistant QR code embedded on any CertiChain academic credential.
+              </p>
+            </div>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setCertIdInput("CERT-2026-000789");
+                  setActiveTab("id");
+                  performVerificationById("CERT-2026-000789");
+                }}
+                className="px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-cyan-500 hover:bg-cyan-400 text-navy-950 transition shadow-glow-cyan min-h-[44px]"
+              >
+                Simulate QR Code Scan (Demo MIT Certificate)
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Error Message */}
+      {errorMsg && (
+        <div className="max-w-3xl mx-auto p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold text-center flex items-center justify-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
+      {/* Comprehensive Cryptographic Proof Result Box */}
+      {result && (
+        <motion.section
+          ref={resultRef}
+          aria-labelledby="audit-report-heading"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="max-w-4xl mx-auto rounded-3xl bg-navy-900/90 border border-cyan-400/30 shadow-[0_0_60px_-15px_rgba(6,182,212,0.3)] backdrop-blur-2xl p-6 sm:p-10 space-y-8"
+        >
+          {/* Header Status Bar */}
+          <div className="flex flex-wrap items-center justify-between pb-6 border-b border-white/10 gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-bold">
+                <ShieldCheck className="w-7 h-7" />
+              </div>
+              <div>
+                <h2 id="audit-report-heading" className="text-xl font-extrabold text-white">
+                  Cryptographic Verification Report
+                </h2>
+                <p className="text-xs font-mono text-slate-400">
+                  Record Identifier: {result.certificateId || certIdInput}
+                </p>
+              </div>
+            </div>
+
+            <StatusBadge status={result.status} size="lg" />
+          </div>
+
+          {/* Certificate Credential Identity Card */}
+          {result.certificate && (
+            <div className="rounded-2xl bg-navy-950/80 border border-white/[0.08] p-6 space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-white/[0.06]">
+                <div className="flex items-center gap-2">
+                  <Building className="w-4 h-4 text-cyan-400" />
+                  <span className="text-xs font-mono font-bold uppercase text-white tracking-wider">
+                    {result.certificate.institutionName} ({result.certificate.institutionCode})
+                  </span>
+                </div>
+                <span className="text-[11px] font-mono text-slate-400">
+                  Issued: {new Date(result.certificate.issueDate).toLocaleDateString()}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">
+                    Graduate Recipient
                   </div>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-navy-950 border border-slate-100 dark:border-slate-800">
-                    <span className="text-[10px] text-slate-400 uppercase block font-semibold">Network</span>
-                    <span className="text-slate-800 dark:text-slate-200 font-bold">
-                      {result.blockchain.network.toUpperCase()}
-                    </span>
+                  <div className="text-lg font-bold text-white">
+                    {result.certificate.studentName}
                   </div>
+                  <div className="text-xs text-slate-400 font-mono">
+                    Certificate ID: {result.certificate.certificateId}
+                  </div>
+                </div>
 
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-navy-950 border border-slate-100 dark:border-slate-800 sm:col-span-2">
-                    <span className="text-[10px] text-slate-400 uppercase block font-semibold">Transaction Hash</span>
-                    <span className="text-slate-800 dark:text-slate-200 break-all select-all font-bold">
-                      {result.blockchain.txHash || "Pending or None"}
-                    </span>
+                <div className="space-y-1">
+                  <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">
+                    Degree & Major
+                  </div>
+                  <div className="text-lg font-bold text-cyan-300">
+                    {result.certificate.title}
+                  </div>
+                  <div className="text-xs text-slate-300 font-medium">
+                    {result.certificate.degree} {result.certificate.department ? `· ${result.certificate.department}` : ""}
+                  </div>
+                  <div className="text-[11px] text-cyan-400 font-mono pt-1 truncate">
+                    Raw SHA-256: {result.certificate.documentSha256.slice(0, 18)}...
                   </div>
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Explainable Risk Gauge */}
+          <RiskGauge fraudRisk={result.fraudRisk} />
+
+          {/* Technical Blockchain Cryptographic Proof Grid */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
+              EVM Consensus & Byte Matching Audit Trail
+            </h3>
+            <div className="rounded-2xl bg-navy-1000 border border-white/10 p-5 space-y-3.5 font-mono text-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-white/[0.06]">
+                <span className="text-slate-400 text-[11px]">EVM Smart Contract:</span>
+                <span className="text-cyan-400 text-[11px] break-all">
+                  {result.blockchain.contractAddress || "0x5FbDB2315678afecb367f032d93F642f64180aa3"}
+                </span>
+              </div>
+
+              {(result.certificate?.txHash || result.blockchain.txHash) && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-white/[0.06]">
+                  <span className="text-slate-400 text-[11px]">On-Chain Transaction:</span>
+                  <span className="text-slate-300 text-[11px] break-all">
+                    {result.certificate?.txHash || result.blockchain.txHash}
+                  </span>
+                </div>
+              )}
+
+              {result.integrity.registeredHash && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-white/[0.06]">
+                  <span className="text-slate-400 text-[11px]">Contract Registered Hash:</span>
+                  <span className="text-slate-300 text-[11px] break-all">
+                    {result.integrity.registeredHash}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <span className="text-slate-400 text-[11px]">Audit Timestamp:</span>
+                <span className="text-slate-300 text-[11px]">
+                  {result.verifiedAt ? new Date(result.verifiedAt).toUTCString() : new Date().toUTCString()}
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Explainable Fraud Risk Panel */}
-          {result.fraudRisk && <RiskGauge fraudRisk={result.fraudRisk} />}
-        </div>
+          {/* Action Bar */}
+          <div className="pt-4 flex flex-wrap items-center justify-between gap-4 border-t border-white/10">
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold bg-navy-800 hover:bg-navy-700 text-slate-200 border border-white/10 transition flex items-center gap-2 min-h-[44px]"
+            >
+              {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
+              <span>{copiedLink ? "Audit Link Copied!" : "Share Verification Link"}</span>
+            </button>
+
+            {result.certificateId && (
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                className="px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-cyan-400 to-sky-400 hover:from-cyan-300 hover:to-white text-navy-950 shadow-glow-cyan transition flex items-center gap-2 min-h-[44px]"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download Certified PDF Proof</span>
+              </button>
+            )}
+          </div>
+        </motion.section>
       )}
     </div>
   );

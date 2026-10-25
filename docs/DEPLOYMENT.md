@@ -59,8 +59,11 @@
 ---
 
 ## 2. Cloud / Production Deployment Architecture
-- **Frontend**: Deploy to Vercel, Netlify, or AWS CloudFront/S3. Set `VITE_API_URL` to production backend domain.
+- **Live Frontend**: Deployed on Vercel:
+  - **Production Domain**: [https://certichain-platform.vercel.app](https://certichain-platform.vercel.app)
+  - **Vercel Edge Mirror**: [https://certichain-seven.vercel.app](https://certichain-seven.vercel.app)
 - **Backend**: Containerize using Docker and host on AWS ECS, Render, Railway, or Google Cloud Run.
 - **Database**: Managed PostgreSQL instance (AWS RDS, Neon, or Supabase).
 - **Blockchain**: Polygon Amoy Testnet, Ethereum Sepolia, or Base Sepolia.
 - **Object Storage**: AWS S3 or Google Cloud Storage with private buckets and signed URLs.
+

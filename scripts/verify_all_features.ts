@@ -59,7 +59,7 @@ async function runFullSystemVerification() {
   assert(!!createdCert.certificateId, `Certificate generated ID: ${createdCert.certificateId}`);
   assert(createdCert.documentSha256.length === 64, `SHA-256 Byte Hash computed: ${createdCert.documentSha256.slice(0, 16)}...`);
   assert(createdCert.status === "ACTIVE", "Certificate status is initialized as ACTIVE");
-  assert(createdCert.txHash?.startsWith("0x"), `Simulated blockchain transaction hash: ${createdCert.txHash?.slice(0, 18)}...`);
+  assert(Boolean(createdCert.txHash?.startsWith("0x")), `Simulated blockchain transaction hash: ${createdCert.txHash?.slice(0, 18)}...`);
 
   // 3. Test Verification Pipeline (Authentic Record)
   console.log("\n🔍 [3/6] Testing Verification Pipeline on Newly Created Certificate...");

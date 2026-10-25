@@ -76,11 +76,11 @@ async function dispatchHybridSimulation<T>(endpoint: string, method: string = "G
     return { success: true } as unknown as T;
   }
 
-  // 3. Verification routes
   if (endpoint.startsWith("/verify/file") || endpoint.startsWith("/verify/upload")) {
     const file = body instanceof FormData ? (body.get("file") as File) : null;
+    const certId = body instanceof FormData ? (body.get("certificateId") as string) : undefined;
     if (file) {
-      const data = await simulateVerifyFile(file);
+      const data = await simulateVerifyFile(file, certId);
       return { success: true, data } as unknown as T;
     }
     const data = await simulateVerify("TAMPER-TEST-999");

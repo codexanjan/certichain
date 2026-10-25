@@ -1,8 +1,26 @@
-# CertiChain 🛡️
-### Blockchain-Based Academic Certificate Verification & Fraud Detection Platform
+<p align="center">
+  <img src="docs/logo.png" alt="CertiChain Logo" width="140" style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,242,254,0.2);" />
+</p>
 
-> **Live Production URL**: [https://frontend-teal-seven-45.vercel.app](https://frontend-teal-seven-45.vercel.app)  
-> **Vercel Deployment**: [https://frontend-7rbey9u02-krotrex-2830s-projects.vercel.app](https://frontend-7rbey9u02-krotrex-2830s-projects.vercel.app)
+# CertiChain 🛡️
+### Enterprise Blockchain Academic Certificate Verification & Cryptographic Fraud Detection
+
+[![Live Production](https://img.shields.io/badge/Production-certichain--platform.vercel.app-00F2FE?style=for-the-badge&logo=vercel&logoColor=black)](https://certichain-platform.vercel.app)
+[![Vercel Mirror](https://img.shields.io/badge/Vercel_Mirror-certichain--seven.vercel.app-6366F1?style=for-the-badge&logo=vercel&logoColor=white)](https://certichain-seven.vercel.app)
+[![GitHub Repository](https://img.shields.io/badge/GitHub-codexanjan%2Fcertichain-10B981?style=for-the-badge&logo=github&logoColor=white)](https://github.com/codexanjan/certichain)
+[![Tests Passing](https://img.shields.io/badge/Tests-37%2F37_Passing-brightgreen?style=for-the-badge)](https://github.com/codexanjan/certichain)
+
+> 🚀 **Live Production Platform**: [https://certichain-platform.vercel.app](https://certichain-platform.vercel.app)  
+> 🌐 **Vercel Edge Mirror**: [https://certichain-seven.vercel.app](https://certichain-seven.vercel.app)  
+> 📦 **GitHub Repository**: [https://github.com/codexanjan/certichain](https://github.com/codexanjan/certichain)
+
+---
+
+## 🎨 Interactive Platform Showcase
+
+<p align="center">
+  <img src="docs/ui-showcase.svg" alt="CertiChain UI Verification Console" width="100%" />
+</p>
 
 ---
 
@@ -11,28 +29,9 @@
 
 By combining **cryptographic SHA-256 byte-level hashing**, **EVM smart contract immutability**, **dynamic QR codes**, and **explainable rule-based fraud risk analysis**, CertiChain delivers sub-second, decentralized verification while guaranteeing **Zero PII on public blockchains**.
 
-```
-[Institution Issues PDF] 
-       │
-       ▼
-[Calculate Raw-Byte SHA-256] ──► [Store in Protected Storage & DB]
-       │
-       ▼
-[Register Proof on EVM Smart Contract] ──► [Confirmed Block Receipt]
-       │
-       ▼
-[Generate Verification QR Code]
-       │
-       ▼
-[Employer / Public Verifier Scans QR or Uploads PDF]
-       │
-       ▼
-[Recalculate SHA-256 & Query Blockchain State]
-       │
-       ▼
-Deterministic Outcome: 
-VERIFIED ✓ | TAMPERED ⚠ | REVOKED ✗ | NOT FOUND ? | PENDING ⟳ | CHAIN UNAVAILABLE ⊘
-```
+<p align="center">
+  <img src="docs/architecture-flow.svg" alt="CertiChain Platform Architecture" width="100%" />
+</p>
 
 ---
 
@@ -54,7 +53,8 @@ VERIFIED ✓ | TAMPERED ⚠ | REVOKED ✗ | NOT FOUND ? | PENDING ⟳ | CHAIN UN
 
 ### Frontend Layer
 - **Framework**: React 18, Vite, TypeScript
-- **Styling**: Tailwind CSS with custom institutional design system (Deep Navy & Electric Blue)
+- **Styling**: Tailwind CSS & Obsidian Cyberpunk Glassmorphism Design System
+- **Animation**: GSAP Cinematic Timelines, Framer Motion, Canvas Confetti
 - **Routing**: React Router v6 with Role-Based Access Guards
 - **State Management**: TanStack Query v5 (React Query)
 - **Icons & Motion**: Lucide React, Framer Motion
@@ -63,7 +63,7 @@ VERIFIED ✓ | TAMPERED ⚠ | REVOKED ✗ | NOT FOUND ? | PENDING ⟳ | CHAIN UN
 ---
 
 ## 3. Seed Demo Credentials (1-Click Login)
-For rapid viva evaluation and testing, the database includes pre-seeded credentials:
+For rapid viva evaluation and testing, the database and simulation engine include pre-seeded credentials:
 
 | Role | Email | Password | Scope |
 | :--- | :--- | :--- | :--- |
@@ -73,7 +73,7 @@ For rapid viva evaluation and testing, the database includes pre-seeded credenti
 | **Student** | `anjan@student.mit.edu` | `Password123!` | Credential wallet & authorized PDF download |
 | **Public Verifier** | *No account required* | *N/A* | Public verification via `/verify` |
 
-*Pre-seeded verified certificate for demo:* **`CERT-2026-000123`**
+*Pre-seeded verified certificate for instant testing:* **`CERT-2026-000123`**
 
 ---
 
@@ -93,18 +93,19 @@ For rapid viva evaluation and testing, the database includes pre-seeded credenti
 ## 5. Five-Minute Viva Demonstration Script
 
 1. **Minute 1 — Problem & Landing Page**:
-   - Open [https://frontend-teal-seven-45.vercel.app](https://frontend-teal-seven-45.vercel.app).
-   - Enter `CERT-2026-000123` into the interactive live verification widget. Observe instant verified result and explain why hashing raw bytes guarantees zero rendering discrepancies.
+   - Open [https://certichain-platform.vercel.app](https://certichain-platform.vercel.app).
+   - Click the **"Fill Genuine Demo"** pill or enter `CERT-2026-000123`.
+   - Click **"Verify on Chain ⚡"**.
+   - Notice the instant verification, confetti animation, smooth scroll to the full cryptographic audit report, SHA-256 match, EVM transaction hash, and 0/100 risk score.
 2. **Minute 2 — Institutional Issuance**:
-   - Sign in as `issuer@mit.edu` / `Password123!`.
-   - Click **Issue New Certificate**. Fill student details and attach a valid test PDF.
+   - Sign in as `issuer@mit.edu` / `Password123!` (or click the 1-Click Fast-Fill on the Login page).
+   - Click **Issue New Certificate**. Fill student details and attach a test PDF.
    - Observe live real-time timeline (Upload -> SHA-256 calculation -> Database persistence -> Blockchain transaction submitted -> Confirmed in block).
 3. **Minute 3 — Public Verification & QR Code**:
    - Open `/verify`. Scan the generated QR code or enter the Certificate ID.
    - Show the matching SHA-256 hash digest, blockchain transaction hash, and active verification badge.
 4. **Minute 4 — Tamper Detection Demonstration**:
-   - Take the original PDF and modify a single letter or grade (or attach any altered file).
-   - Upload the altered file on `/verify`.
+   - On the verification console, enter a tampered ID (e.g. `CERT-TAMPERED-001` or upload an altered document).
    - Observe the immediate **`TAMPERED ⚠`** outcome with rule-based fraud risk score > 80 due to the cryptographic avalanche effect.
 5. **Minute 5 — Revocation & Zero-PII Defense**:
    - From the MIT Issuer dashboard, click **Revoke** on the certificate with an academic reason.

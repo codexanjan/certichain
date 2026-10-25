@@ -17,6 +17,7 @@
     "test": "npm --workspace=blockchain test && npm --workspace=backend test",
     "test:contract": "npm --workspace=blockchain test",
     "test:backend": "npm --workspace=backend test",
+    "test:features": "npx tsx scripts/verify_all_features.ts",
     "typecheck": "npm --workspace=backend run typecheck && npm --workspace=frontend run typecheck",
     "build": "npm --workspace=blockchain run compile && npm --workspace=backend run build && npm --workspace=frontend run build",
     "db:migrate": "npm --workspace=backend run prisma:migrate",
