@@ -24,10 +24,15 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Generate Prisma Client & Compile Contracts
+        run: |
+          cd backend && npx prisma generate
+          cd ../blockchain && npx hardhat compile
+
       - name: Run Hardhat Blockchain Contract Tests
         run: |
           cd blockchain
-          npm test
+          npx hardhat test
 
       - name: Run Backend Cryptography & Fraud Engine Tests
         run: |
