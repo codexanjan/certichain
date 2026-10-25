@@ -1,4 +1,5 @@
 export type UserRole = "SUPER_ADMIN" | "INSTITUTION_ISSUER" | "STUDENT";
+export type Role = UserRole;
 export type AccountStatus = "PENDING" | "ACTIVE" | "SUSPENDED" | "REJECTED";
 export type CertificateStatus = "DRAFT" | "PENDING_BLOCKCHAIN" | "ACTIVE" | "REVOKED";
 export type VerificationOutcome =
@@ -18,6 +19,8 @@ export interface User {
   institutionId?: string | null;
   institutionName?: string | null;
   institutionCode?: string | null;
+  createdAt?: string;
+  lastLoginAt?: string;
 }
 
 export interface Institution {

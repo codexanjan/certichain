@@ -9,12 +9,14 @@ import { SignupPage } from "./pages/SignupPage";
 import { IssuerDashboard } from "./pages/IssuerDashboard";
 import { StudentDashboard } from "./pages/StudentDashboard";
 import { AdminDashboard } from "./pages/AdminDashboard";
+import { HistoryPage } from "./pages/HistoryPage";
+import { MobileBottomNav } from "./components/MobileBottomNav";
 import { useAuth } from "./context/AuthContext";
 import { UserRole } from "./types";
 
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
-  allowedRoles?: UserRole[];
+  allowedRoles?: (UserRole | string)[];
 }> = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
 
@@ -30,7 +32,9 @@ const ProtectedRoute: React.FC<{
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  const roleMatches = !allowedRoles || allowedRoles.includes(user.role);
+
+  if (!roleMatches) {
     return <Navigate to="/" replace />;
   }
 
@@ -40,7 +44,7 @@ const ProtectedRoute: React.FC<{
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen pb-14 md:pb-0">
         <Navbar />
         <main className="flex-1">
           <Routes>
@@ -48,6 +52,7 @@ export const App: React.FC = () => {
             <Route path="/" element={<LandingPage />} />
             <Route path="/verify" element={<VerifyPage />} />
             <Route path="/verify/:certificateId" element={<VerifyPage />} />
+            <Route path="/history" element={<HistoryPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
 
@@ -86,6 +91,7 @@ export const App: React.FC = () => {
           </Routes>
         </main>
         <Footer />
+        <MobileBottomNav />
       </div>
     </BrowserRouter>
   );

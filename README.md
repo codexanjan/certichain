@@ -16,6 +16,7 @@
 
 <p align="center">
   <a href="https://certichain-platform.vercel.app"><img src="https://img.shields.io/badge/🚀_Live_Production-certichain--platform.vercel.app-00F2FE?style=for-the-badge&logo=vercel&logoColor=black" alt="Live Demo" /></a>
+  <a href="https://github.com/codexanjan/certichain/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/📱_Download_Android_APK-v1.0.0_Mobile-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" /></a>
   <a href="https://github.com/codexanjan/certichain/actions"><img src="https://img.shields.io/badge/Build-Passing-10B981?style=for-the-badge&logo=githubactions&logoColor=white" alt="CI Status" /></a>
   <a href="https://github.com/codexanjan/certichain"><img src="https://img.shields.io/badge/Tests-37%2F37_Passing-brightgreen?style=for-the-badge&logo=jest&logoColor=white" alt="Tests" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License" /></a>
@@ -23,18 +24,19 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Solidity-0.8.28-363636?style=flat-square&logo=solidity" alt="Solidity" />
-  <img src="https://img.shields.io/badge/Ethereum-Hardhat-yellow?style=flat-square&logo=ethereum" alt="Hardhat" />
+  <img src="https://img.shields.io/badge/Zero_Knowledge-zk--SNARKs-9945FF?style=flat-square&logo=ethereum" alt="ZK Proofs" />
+  <img src="https://img.shields.io/badge/AI_Forensics-ELA_Raster_Scan-F59E0B?style=flat-square" alt="AI Forensics" />
+  <img src="https://img.shields.io/badge/Firebase_Auth-Real_Identity-FFA611?style=flat-square&logo=firebase" alt="Firebase" />
+  <img src="https://img.shields.io/badge/Capacitor-Mobile_APK-1192FA?style=flat-square&logo=capacitor" alt="Capacitor" />
   <img src="https://img.shields.io/badge/TypeScript-5.x-blue?style=flat-square&logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React" />
-  <img src="https://img.shields.io/badge/TailwindCSS-Cyberpunk_Obsidian-38BDF8?style=flat-square&logo=tailwindcss" alt="Tailwind" />
-  <img src="https://img.shields.io/badge/Security-Zero_PII-green?style=flat-square" alt="Zero PII" />
-  <img src="https://img.shields.io/badge/PRs-Welcome-brightgreen?style=flat-square" alt="PRs Welcome" />
 </p>
 
 ---
 
 ## ⚡ Quick Links
 - 🌐 **Live Web Application**: [https://certichain-platform.vercel.app](https://certichain-platform.vercel.app)
+- 📱 **Android APK Download**: [Releases / CertiChain-Mobile-v1.0.0.apk](https://github.com/codexanjan/certichain/releases/download/v1.0.0/CertiChain-Mobile-v1.0.0.apk)
 - 🌍 **Global Edge Mirror**: [https://certichain-seven.vercel.app](https://certichain-seven.vercel.app)
 - 📖 **System Architecture**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - 🔒 **Security & Cryptography**: [docs/SECURITY.md](docs/SECURITY.md)
@@ -85,12 +87,29 @@ flowchart LR
 
 ---
 
-## 🌟 Core Protocol Innovations
+## 🌟 Core Protocol Innovations & Unique Groundbreaking Features
 
-### 1. 🔒 Byte-Level SHA-256 Avalanche Protection
+### 1. 🔮 Zero-Knowledge (ZK-SNARK) Selective Disclosure & Grade Privacy Engine
+*(Unique Feature — Not present in existing credential verifiers)*  
+Students can cryptographically prove achievements—such as `GPA >= 3.5 [Dean's List]`, `Degree Conferred in Good Standing`, or `ABET STEM Accredited`—to prospective employers without revealing their raw grades, class rank, or full transcript. 
+- **Under the Hood**: Generates Groth16 zk-SNARK cryptographic witness proofs (`π_a`, `π_b`, `π_c`) verifiable on-chain in O(1) time and constant gas, preserving absolute FERPA & GDPR student privacy.
+
+### 2. 🔬 Real-Time AI Forensic Document Tamper Heatmap Scanner
+*(Unique Feature — Automated Multi-Layer Raster Diagnostics)*  
+Before touching the blockchain, uploaded PDF diplomas are analyzed through a multi-pass forensic computer vision canvas:
+- **Error Level Analysis (ELA)**: Recompresses images to uncover compression artifact variances in modified grade numbers.
+- **Micro-Typography Kerning Variance**: Detects font glyph misalignments from post-render text injection tools.
+- **Pixel Discontinuity Overlays**: Visualized live via an interactive forensic raster canvas with real-time anomaly hotspots.
+
+### 3. 🔐 Real Firebase Authentication & Immutable Firestore Verification Ledger
+- **Strict Real Identity**: New student and university accounts undergo real authentication using Firebase Auth (Email/Password & Google SSO OAuth) with encrypted user profiles stored in Cloud Firestore.
+- **Fast Demo Access**: 1-click Demo credentials (`admin@certichain.io`, `issuer@mit.edu`, `anjan@student.mit.edu`) are available strictly on the Login console for rapid evaluation.
+- **Persistent Verification Ledger**: Every verification event writes to an indexed Firestore audit collection, allowing verifiers to search past audits and generate printable, tamper-evident Official Verification Certificates.
+
+### 4. 🔒 Byte-Level SHA-256 Avalanche Protection
 CertiChain reads the **raw binary byte array** of issued certificate PDFs rather than rendered text. Modifying even a single pixel, punctuation mark, or grade digit produces an entirely unrecognizable 64-character hexadecimal digest, instantly triggering the fraud engine.
 
-### 2. 🛡️ Absolute Zero-PII On-Chain (GDPR & FERPA Compliant)
+### 5. 🛡️ Absolute Zero-PII On-Chain (GDPR & FERPA Compliant)
 Public blockchains must never store sensitive student records. CertiChain writes only:
 - `bytes32 certKey` = `keccak256(abi.encodePacked(institutionCode, certificateId))`
 - `bytes32 documentHash` = `sha256(raw_pdf_bytes)`
@@ -99,12 +118,24 @@ Public blockchains must never store sensitive student records. CertiChain writes
 
 Student names, degrees, and academic transcripts remain strictly in private encrypted off-chain storage.
 
-### 3. 📊 Explainable Fraud Risk Assessment Engine
+### 6. 📊 Explainable Fraud Risk Assessment Engine
 Rather than returning a vague error, CertiChain evaluates incoming documents against a deterministic, explainable risk scoring matrix:
 * **0 - 15 (MINIMAL)**: Perfect byte hash match, active on-chain status, authorized registrar signature.
 * **16 - 45 (LOW)**: Verified record, issued over 5 years ago, confirmed archived registrar.
 * **46 - 79 (ELEVATED)**: Timestamp discrepancies, unconfirmed block inclusion.
 * **80 - 100 (CRITICAL / TAMPERED)**: Document hash divergence, revoked status, or unauthorized issuer address.
+
+---
+
+## 📱 Mobile-First Architecture & Android APK
+
+CertiChain is engineered with a mobile-first philosophy:
+- **Standalone PWA & Native Capacitor Shell**: Runs in edge mobile browsers and as a native Android APK (`io.certichain.app`).
+- **Tactile Bottom Navigation**: Glassmorphic floating bar with 48x48px touch targets for instantaneous one-thumb navigation (`Home`, `Verify`, `History`, `Dashboard`).
+- **Dark Obsidian Cyberpunk Styling**: Low power consumption on OLED displays with high-contrast WCAG AA typography.
+- **Offline Proof Caching**: Local proof verification state preserved across unstable mobile networks.
+
+Download the latest Android APK package directly from the [GitHub Releases page](https://github.com/codexanjan/certichain/releases/tag/v1.0.0).
 
 ---
 

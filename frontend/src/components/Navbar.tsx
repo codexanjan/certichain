@@ -34,7 +34,7 @@ export const Navbar: React.FC = () => {
   const navLinks = [
     { label: "Overview", href: "/#overview" },
     { label: "Architecture", href: "/#features" },
-    { label: "Lifecycle", href: "/#how-it-works" },
+    { label: "Audit Ledger", href: "/history" },
   ];
 
   return (

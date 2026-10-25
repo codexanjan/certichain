@@ -24,16 +24,20 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
+import { Eye, Lock, Key } from "lucide-react";
 import { api } from "../services/api";
 import { VerificationResult } from "../types";
 import { StatusBadge } from "../components/StatusBadge";
 import { RiskGauge } from "../components/RiskGauge";
+import { ZKProofModal } from "../components/ZKProofModal";
+import { ForensicScanner } from "../components/ForensicScanner";
+import { recordVerificationHistory } from "../services/firebase";
 
 export const VerifyPage: React.FC = () => {
   const { certificateId: routeCertId } = useParams<{ certificateId?: string }>();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<"id" | "upload" | "qr">("id");
+  const [activeTab, setActiveTab] = useState<"id" | "upload" | "qr" | "forensics">("id");
   const [certIdInput, setCertIdInput] = useState(routeCertId || "");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileHashPreview, setFileHashPreview] = useState<string | null>(null);
@@ -41,6 +45,7 @@ export const VerifyPage: React.FC = () => {
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isZKModalOpen, setIsZKModalOpen] = useState(false);
   const resultRef = React.useRef<HTMLDivElement>(null);
 
   // Auto-verify if certificateId provided in URL
@@ -96,6 +101,21 @@ export const VerifyPage: React.FC = () => {
       );
       setResult(res.data);
       triggerCelebration(res.data.status);
+
+      // Record to persistent Firestore & local history
+      recordVerificationHistory({
+        certificateId: res.data.certificateId || id.trim(),
+        studentName: res.data.certificate?.studentName,
+        institutionName: res.data.certificate?.institutionName,
+        degree: res.data.certificate?.degree,
+        documentSha256: res.data.integrity.registeredHash || res.data.integrity.submittedHash,
+        status: res.data.status,
+        riskScore: res.data.fraudRisk.riskScore,
+        verifiedAt: res.data.verifiedAt || new Date().toISOString(),
+        blockchainTxHash: res.data.blockchain?.txHash || undefined,
+        tamperReasons: res.data.fraudRisk?.reasons,
+      });
+
       setTimeout(() => {
         resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 150);
@@ -137,6 +157,21 @@ export const VerifyPage: React.FC = () => {
       );
       setResult(res.data);
       triggerCelebration(res.data.status);
+
+      // Record to persistent Firestore & local history
+      recordVerificationHistory({
+        certificateId: res.data.certificateId || certIdInput.trim() || "UPLOAD-DOC",
+        studentName: res.data.certificate?.studentName,
+        institutionName: res.data.certificate?.institutionName,
+        degree: res.data.certificate?.degree,
+        documentSha256: res.data.integrity.registeredHash || res.data.integrity.submittedHash,
+        status: res.data.status,
+        riskScore: res.data.fraudRisk.riskScore,
+        verifiedAt: res.data.verifiedAt || new Date().toISOString(),
+        blockchainTxHash: res.data.blockchain?.txHash || undefined,
+        tamperReasons: res.data.fraudRisk?.reasons,
+      });
+
       setTimeout(() => {
         resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 150);
@@ -191,7 +226,7 @@ export const VerifyPage: React.FC = () => {
       <section aria-labelledby="verification-form-title" className="max-w-3xl mx-auto rounded-3xl bg-navy-900/90 border border-white/10 backdrop-blur-2xl shadow-card p-6 sm:p-8 space-y-6">
         <h2 id="verification-form-title" className="sr-only">Certificate Verification Method</h2>
         {/* Tab Selection Switcher */}
-        <div className="grid grid-cols-3 p-1 rounded-2xl bg-navy-1000 border border-white/[0.08]" role="tablist">
+        <div className="grid grid-cols-2 sm:grid-cols-4 p-1 rounded-2xl bg-navy-1000 border border-white/[0.08] gap-1" role="tablist">
           <button
             type="button"
             role="tab"
@@ -200,14 +235,14 @@ export const VerifyPage: React.FC = () => {
               setActiveTab("id");
               setErrorMsg(null);
             }}
-            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 min-h-[44px] ${
+            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 min-h-[44px] cursor-pointer ${
               activeTab === "id"
                 ? "bg-cyan-500 text-navy-950 shadow-glow-cyan"
                 : "text-slate-400 hover:text-white"
             }`}
           >
             <Search className="w-3.5 h-3.5" />
-            <span>Certificate ID / Hash</span>
+            <span>ID / Hash</span>
           </button>
 
           <button
@@ -218,14 +253,14 @@ export const VerifyPage: React.FC = () => {
               setActiveTab("upload");
               setErrorMsg(null);
             }}
-            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 min-h-[44px] ${
+            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 min-h-[44px] cursor-pointer ${
               activeTab === "upload"
                 ? "bg-cyan-500 text-navy-950 shadow-glow-cyan"
                 : "text-slate-400 hover:text-white"
             }`}
           >
             <Upload className="w-3.5 h-3.5" />
-            <span>Upload PDF File</span>
+            <span>Upload PDF</span>
           </button>
 
           <button
@@ -236,7 +271,7 @@ export const VerifyPage: React.FC = () => {
               setActiveTab("qr");
               setErrorMsg(null);
             }}
-            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 min-h-[44px] ${
+            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 min-h-[44px] cursor-pointer ${
               activeTab === "qr"
                 ? "bg-cyan-500 text-navy-950 shadow-glow-cyan"
                 : "text-slate-400 hover:text-white"
@@ -244,6 +279,24 @@ export const VerifyPage: React.FC = () => {
           >
             <QrCode className="w-3.5 h-3.5" />
             <span>QR Scanner</span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "forensics"}
+            onClick={() => {
+              setActiveTab("forensics");
+              setErrorMsg(null);
+            }}
+            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 min-h-[44px] cursor-pointer ${
+              activeTab === "forensics"
+                ? "bg-cyan-500 text-navy-950 shadow-glow-cyan"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>AI Forensics</span>
           </button>
         </div>
 
@@ -414,6 +467,13 @@ export const VerifyPage: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Tab 4: AI Forensic Scanner */}
+        {activeTab === "forensics" && (
+          <div className="pt-2">
+            <ForensicScanner />
+          </div>
+        )}
       </section>
 
       {/* Error Message */}
@@ -543,21 +603,32 @@ export const VerifyPage: React.FC = () => {
           </div>
 
           {/* Action Bar */}
-          <div className="pt-4 flex flex-wrap items-center justify-between gap-4 border-t border-white/10">
-            <button
-              type="button"
-              onClick={handleCopyLink}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold bg-navy-800 hover:bg-navy-700 text-slate-200 border border-white/10 transition flex items-center gap-2 min-h-[44px]"
-            >
-              {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
-              <span>{copiedLink ? "Audit Link Copied!" : "Share Verification Link"}</span>
-            </button>
+          <div className="pt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-navy-800 hover:bg-navy-700 text-slate-200 border border-white/10 transition flex items-center gap-2 min-h-[44px] cursor-pointer"
+              >
+                {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
+                <span>{copiedLink ? "Audit Link Copied!" : "Share Audit Link"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsZKModalOpen(true)}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/40 text-purple-300 transition flex items-center gap-2 min-h-[44px] cursor-pointer shadow-lg shadow-purple-500/10"
+              >
+                <Lock className="w-4 h-4 text-purple-400" />
+                <span>Generate Zero-Knowledge (ZK) Proof</span>
+              </button>
+            </div>
 
             {result.certificateId && (
               <button
                 type="button"
                 onClick={handleDownloadPdf}
-                className="px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-cyan-400 to-sky-400 hover:from-cyan-300 hover:to-white text-navy-950 shadow-glow-cyan transition flex items-center gap-2 min-h-[44px]"
+                className="px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-cyan-400 to-sky-400 hover:from-cyan-300 hover:to-white text-navy-950 shadow-glow-cyan transition flex items-center gap-2 min-h-[44px] cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 <span>Download Certified PDF Proof</span>
@@ -565,6 +636,17 @@ export const VerifyPage: React.FC = () => {
             )}
           </div>
         </motion.section>
+      )}
+
+      {/* Zero-Knowledge Proof Modal */}
+      {result && result.certificate && (
+        <ZKProofModal
+          isOpen={isZKModalOpen}
+          onClose={() => setIsZKModalOpen(false)}
+          certificateId={result.certificateId || result.certificate.certificateId}
+          studentName={result.certificate.studentName || "Graduate"}
+          degree={result.certificate.degree || "Admitted Degree"}
+        />
       )}
     </div>
   );
