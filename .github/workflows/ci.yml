@@ -1,0 +1,46 @@
+name: CI / CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  audit-and-test:
+    name: Build & Test Verification Engine
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Hardhat Blockchain Contract Tests
+        run: |
+          cd blockchain
+          npm test
+
+      - name: Run Backend Cryptography & Fraud Engine Tests
+        run: |
+          cd backend
+          npm test
+
+      - name: Build Production Frontend Application
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Verify Documentation & Asset Integrity
+        run: |
+          test -f docs/logo.png
+          test -f docs/architecture-flow.svg
+          test -f docs/ui-showcase.svg
