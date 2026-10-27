@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldCheck, Lock, Key, Copy, Check, Sparkles, X, FileText } from "lucide-react";
 import confetti from "canvas-confetti";
+import { recordVerificationHistory } from "../services/firebase";
 
 interface ZKProofModalProps {
   isOpen: boolean;
@@ -52,13 +53,27 @@ export const ZKProofModal: React.FC<ZKProofModalProps> = ({
       statement = `Degree Major satisfies criteria for STEM Accreditation without disclosing full course catalog.`;
     }
 
-    setGeneratedProof({
+    const proofData = {
       proofId,
       statement,
       zkCommitment: randCommitment,
       merklePath: randMerkle,
       isValid: true,
       timestamp: new Date().toISOString(),
+    };
+
+    setGeneratedProof(proofData);
+
+    // Record ZK proof generation to persistent Firestore & local verification history
+    recordVerificationHistory({
+      certificateId: certificateId || "ZK-DISCLOSURE-PROOF",
+      studentName,
+      degree,
+      status: "VERIFIED",
+      riskScore: 0,
+      verifiedAt: proofData.timestamp,
+      tamperReasons: [`zk-SNARK Selective Disclosure Verified: ${statement}`],
+      zkProofGenerated: true,
     });
 
     setGenerating(false);

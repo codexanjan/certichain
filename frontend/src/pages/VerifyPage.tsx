@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import {
@@ -36,8 +36,9 @@ import { recordVerificationHistory } from "../services/firebase";
 export const VerifyPage: React.FC = () => {
   const { certificateId: routeCertId } = useParams<{ certificateId?: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState<"id" | "upload" | "qr" | "forensics">("id");
+  const [activeTab, setActiveTab] = useState<"id" | "upload" | "qr" | "forensics" | "zk">("id");
   const [certIdInput, setCertIdInput] = useState(routeCertId || "");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileHashPreview, setFileHashPreview] = useState<string | null>(null);
@@ -55,6 +56,17 @@ export const VerifyPage: React.FC = () => {
       performVerificationById(routeCertId);
     }
   }, [routeCertId]);
+
+  // Sync active tab and ZK modal with URL search parameters
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "forensics" || tab === "upload" || tab === "qr" || tab === "id" || tab === "zk") {
+      setActiveTab(tab);
+    }
+    if (searchParams.get("zk") === "true") {
+      setIsZKModalOpen(true);
+    }
+  }, [searchParams]);
 
   // Client-side SHA-256 computation preview for uploaded file
   useEffect(() => {
@@ -226,7 +238,7 @@ export const VerifyPage: React.FC = () => {
       <section aria-labelledby="verification-form-title" className="max-w-3xl mx-auto rounded-3xl bg-navy-900/90 border border-white/10 backdrop-blur-2xl shadow-card p-6 sm:p-8 space-y-6">
         <h2 id="verification-form-title" className="sr-only">Certificate Verification Method</h2>
         {/* Tab Selection Switcher */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 p-1 rounded-2xl bg-navy-1000 border border-white/[0.08] gap-1" role="tablist">
+        <div className="grid grid-cols-2 sm:grid-cols-5 p-1 rounded-2xl bg-navy-1000 border border-white/[0.08] gap-1" role="tablist">
           <button
             type="button"
             role="tab"
@@ -297,6 +309,24 @@ export const VerifyPage: React.FC = () => {
           >
             <Eye className="w-3.5 h-3.5" />
             <span>AI Forensics</span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "zk"}
+            onClick={() => {
+              setActiveTab("zk");
+              setErrorMsg(null);
+            }}
+            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 min-h-[44px] cursor-pointer ${
+              activeTab === "zk"
+                ? "bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg shadow-purple-500/20"
+                : "text-purple-300 hover:text-white"
+            }`}
+          >
+            <Lock className="w-3.5 h-3.5 text-purple-400" />
+            <span>ZK Privacy</span>
           </button>
         </div>
 
@@ -474,6 +504,65 @@ export const VerifyPage: React.FC = () => {
             <ForensicScanner />
           </div>
         )}
+
+        {/* Tab 5: Zero-Knowledge Privacy Proof Engine */}
+        {activeTab === "zk" && (
+          <div className="pt-2 space-y-6">
+            <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-purple-950/40 via-navy-950 to-navy-1000 border border-purple-500/30 space-y-5">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/40 text-purple-400 flex items-center justify-center shrink-0">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white flex flex-wrap items-center gap-2">
+                    <span>Zero-Knowledge (zk-SNARK) Privacy Engine</span>
+                    <span className="px-2.5 py-0.5 text-[11px] rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-mono">
+                      Selective Disclosure
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Prove student achievements, honors, and STEM criteria with mathematical certainty without exposing raw transcripts or GPA figures.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs">
+                <div className="p-3.5 rounded-xl bg-navy-900/90 border border-white/5 space-y-1">
+                  <span className="text-[10px] font-mono text-purple-300 font-bold uppercase tracking-wider">Predicate I</span>
+                  <div className="font-bold text-white">Dean's List (GPA ≥ 3.5)</div>
+                  <div className="text-[11px] text-slate-400 leading-relaxed">Verifies honors tier without exposing individual semester marks.</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-navy-900/90 border border-white/5 space-y-1">
+                  <span className="text-[10px] font-mono text-purple-300 font-bold uppercase tracking-wider">Predicate II</span>
+                  <div className="font-bold text-white">Conferred in Good Standing</div>
+                  <div className="text-[11px] text-slate-400 leading-relaxed">Proves official university degree with zero disciplinary warnings.</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-navy-900/90 border border-white/5 space-y-1">
+                  <span className="text-[10px] font-mono text-purple-300 font-bold uppercase tracking-wider">Predicate III</span>
+                  <div className="font-bold text-white">ABET STEM Accredited</div>
+                  <div className="text-[11px] text-slate-400 leading-relaxed">Validates engineering compliance without course syllabus leakage.</div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 border-t border-white/[0.08]">
+                <div className="text-xs text-slate-300">
+                  Target Credential:{" "}
+                  <span className="font-mono text-purple-300 font-bold">
+                    {result?.certificateId || certIdInput || "CERT-2026-000789 (Alice Walker · MIT)"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsZKModalOpen(true)}
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 shadow-lg shadow-purple-500/25 transition flex items-center justify-center gap-2 min-h-[44px] cursor-pointer"
+                >
+                  <Lock className="w-4 h-4 text-white" />
+                  <span>Launch ZK-SNARK Generator</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Error Message */}
@@ -639,15 +728,13 @@ export const VerifyPage: React.FC = () => {
       )}
 
       {/* Zero-Knowledge Proof Modal */}
-      {result && result.certificate && (
-        <ZKProofModal
-          isOpen={isZKModalOpen}
-          onClose={() => setIsZKModalOpen(false)}
-          certificateId={result.certificateId || result.certificate.certificateId}
-          studentName={result.certificate.studentName || "Graduate"}
-          degree={result.certificate.degree || "Admitted Degree"}
-        />
-      )}
+      <ZKProofModal
+        isOpen={isZKModalOpen}
+        onClose={() => setIsZKModalOpen(false)}
+        certificateId={result?.certificateId || result?.certificate?.certificateId || (certIdInput.trim() ? certIdInput.trim() : "CERT-2026-000789")}
+        studentName={result?.certificate?.studentName || "Alice Walker"}
+        degree={result?.certificate?.degree || "Bachelor of Science in Computer Science (MIT)"}
+      />
     </div>
   );
 };

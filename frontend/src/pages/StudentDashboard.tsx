@@ -14,18 +14,21 @@ import {
   X,
   GraduationCap,
   Sparkles,
+  Lock,
 } from "lucide-react";
 import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { Certificate } from "../types";
 import { StatusBadge } from "../components/StatusBadge";
 import { QRCodeSVG } from "qrcode.react";
+import { ZKProofModal } from "../components/ZKProofModal";
 
 export const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedQrCert, setSelectedQrCert] = useState<Certificate | null>(null);
+  const [selectedZkCert, setSelectedZkCert] = useState<Certificate | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const fetchMyCertificates = async () => {
@@ -170,7 +173,7 @@ export const StudentDashboard: React.FC = () => {
 
                 {/* Action Buttons */}
                 <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.08]">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setSelectedQrCert(cert)}
@@ -195,6 +198,14 @@ export const StudentDashboard: React.FC = () => {
                           <span>Share Link</span>
                         </>
                       )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedZkCert(cert)}
+                      className="p-2.5 rounded-xl text-purple-300 hover:text-purple-200 hover:bg-purple-500/20 border border-purple-500/40 transition min-h-[44px] flex items-center justify-center gap-1.5 text-xs font-semibold shadow-sm shadow-purple-500/20"
+                    >
+                      <Lock className="w-4 h-4 text-purple-400" />
+                      <span>ZK Privacy Proof</span>
                     </button>
                   </div>
 
@@ -269,6 +280,17 @@ export const StudentDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ZK Proof Modal */}
+      {selectedZkCert && (
+        <ZKProofModal
+          isOpen={!!selectedZkCert}
+          onClose={() => setSelectedZkCert(null)}
+          certificateId={selectedZkCert.certificateId}
+          studentName={selectedZkCert.studentProfile?.fullName || user?.fullName || "Graduate"}
+          degree={selectedZkCert.title || selectedZkCert.degree || "Bachelor of Science"}
+        />
       )}
     </div>
   );

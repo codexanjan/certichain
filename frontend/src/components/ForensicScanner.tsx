@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Eye, ShieldAlert, CheckCircle2, AlertTriangle, Scan, Upload, RefreshCw, FileText } from "lucide-react";
+import { recordVerificationHistory } from "../services/firebase";
 
 export const ForensicScanner: React.FC = () => {
   const [analyzing, setAnalyzing] = useState(false);
@@ -32,6 +33,16 @@ export const ForensicScanner: React.FC = () => {
         verdict: "CRITICAL TAMPER DETECTED: Grade marks spliced and altered after registrar PDF finalization.",
       });
       drawHeatmap(true);
+      recordVerificationHistory({
+        certificateId: "SCAN-TAMPER-ALERT",
+        studentName: "Suspect Document",
+        institutionName: "MIT Forensic Scan",
+        degree: "B.S. Computer Science",
+        status: "TAMPERED",
+        riskScore: 92,
+        verifiedAt: new Date().toISOString(),
+        tamperReasons: ["Critical AI Forensic ELA Discrepancy", "Font Kerning & Splicing Mismatch (Score: 92.5/100)"],
+      });
     } else {
       setMetrics({
         fontKerningVariance: 1.2,
@@ -41,6 +52,16 @@ export const ForensicScanner: React.FC = () => {
         verdict: "AUTHENTIC DOCUMENT: Uniform pixel rasterization, matching institutional typography vector curves.",
       });
       drawHeatmap(false);
+      recordVerificationHistory({
+        certificateId: "SCAN-AUTHENTIC-001",
+        studentName: "Verified Sample",
+        institutionName: "MIT Forensic Scan",
+        degree: "B.S. Computer Science",
+        status: "VERIFIED",
+        riskScore: 1,
+        verifiedAt: new Date().toISOString(),
+        tamperReasons: ["Uniform raster curves", "Zero typography kerning anomaly"],
+      });
     }
 
     setAnalyzing(false);

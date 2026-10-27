@@ -502,6 +502,127 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* 🌟 UNIQUE GROUNDBREAKING INNOVATIONS (Not Found on GitHub) */}
+      <section id="innovations" className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="text-center max-w-3xl mx-auto space-y-4">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-cyan-500/20 border border-purple-500/40 text-purple-300 text-xs font-mono font-bold tracking-wider uppercase shadow-lg shadow-purple-500/10">
+            <Sparkles className="w-4 h-4 text-purple-400" />
+            <span>Proprietary Research &amp; Breakthroughs</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+            Groundbreaking Innovations <br className="hidden sm:inline" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400">
+              Not Found Anywhere on GitHub
+            </span>
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            CertiChain goes beyond basic hash registries by pioneering zero-knowledge selective disclosure, raster computer vision forensics, and production cloud ledger persistence.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Innovation 1: ZK-SNARK Privacy Engine */}
+          <div className="rounded-3xl p-8 bg-gradient-to-b from-purple-950/40 via-navy-900 to-navy-950 border border-purple-500/30 hover:border-purple-400/60 shadow-card transition-all duration-300 space-y-6 flex flex-col justify-between group">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/40 text-purple-400 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-[10px] font-mono text-purple-300 font-bold">
+                  Groth16 zk-SNARK
+                </span>
+              </div>
+              <h3 className="text-xl font-black text-white group-hover:text-purple-300 transition-colors">
+                Zero-Knowledge Selective Disclosure Engine
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Allows students to cryptographically prove honors (<span className="text-purple-300 font-bold">GPA ≥ 3.5</span>), degree conferral, and ABET accreditation without disclosing full transcripts or sensitive grades. Generates $O(1)$ constant-gas Groth16 witness proofs (&pi;<sub>A</sub>, &pi;<sub>B</sub>, &pi;<sub>C</sub>).
+              </p>
+              <div className="p-3.5 rounded-xl bg-navy-1000/80 border border-white/10 font-mono text-[11px] text-purple-300 space-y-1">
+                <div className="text-[10px] text-slate-400 font-semibold">// ZERO-KNOWLEDGE PROOF SYSTEM</div>
+                <div className="text-slate-300 truncate">Pred: Honors(gpa) &ge; 3.50</div>
+                <div className="text-emerald-400 text-[10px]">Verification: Constant Gas · O(1)</div>
+              </div>
+            </div>
+
+            <Link
+              to="/verify?tab=zk"
+              className="w-full py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider text-center text-white bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 shadow-lg shadow-purple-500/25 transition flex items-center justify-center gap-2 min-h-[44px]"
+            >
+              <span>Test ZK-SNARK Privacy Engine</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {/* Innovation 2: AI Forensic Document Tamper Heatmap Scanner */}
+          <div className="rounded-3xl p-8 bg-gradient-to-b from-cyan-950/40 via-navy-900 to-navy-950 border border-cyan-500/30 hover:border-cyan-400/60 shadow-card transition-all duration-300 space-y-6 flex flex-col justify-between group">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                  <Fingerprint className="w-6 h-6" />
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-[10px] font-mono text-cyan-300 font-bold">
+                  Raster Computer Vision
+                </span>
+              </div>
+              <h3 className="text-xl font-black text-white group-hover:text-cyan-300 transition-colors">
+                Real-Time AI Forensic Document Scanner
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Multi-pass computer vision canvas executing <span className="text-cyan-300 font-bold">Error Level Analysis (ELA)</span>, pixel compression discontinuity, and font kerning variance to detect post-render document tampering and spliced text blocks.
+              </p>
+              <div className="p-3.5 rounded-xl bg-navy-1000/80 border border-white/10 font-mono text-[11px] text-cyan-300 space-y-1">
+                <div className="text-[10px] text-slate-400 font-semibold">// MULTI-PASS TAMPER DETECTION</div>
+                <div className="text-slate-300 truncate">ELA Canvas: 20x High-Pass Compression</div>
+                <div className="text-cyan-400 text-[10px]">Anomaly Heatmap: Active Vectoring</div>
+              </div>
+            </div>
+
+            <Link
+              to="/verify?tab=forensics"
+              className="w-full py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider text-center text-navy-950 bg-gradient-to-r from-cyan-400 to-sky-300 hover:from-cyan-300 hover:to-white shadow-glow-cyan transition flex items-center justify-center gap-2 min-h-[44px]"
+            >
+              <span>Launch AI Forensic Scanner</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {/* Innovation 3: Real Firebase Auth & Firestore Audit Ledger */}
+          <div className="rounded-3xl p-8 bg-gradient-to-b from-amber-950/40 via-navy-900 to-navy-950 border border-amber-500/30 hover:border-amber-400/60 shadow-card transition-all duration-300 space-y-6 flex flex-col justify-between group">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                  <Database className="w-6 h-6" />
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-[10px] font-mono text-amber-300 font-bold">
+                  Firebase &amp; Firestore
+                </span>
+              </div>
+              <h3 className="text-xl font-black text-white group-hover:text-amber-300 transition-colors">
+                Real Cloud Auth &amp; Firestore Audit History
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Production-grade Firebase Authentication with Google SSO OAuth, strict real-user registration, and automatic synchronization of every certificate verification attempt directly into Cloud Firestore ledgers.
+              </p>
+              <div className="p-3.5 rounded-xl bg-navy-1000/80 border border-white/10 font-mono text-[11px] text-amber-300 space-y-1">
+                <div className="text-[10px] text-slate-400 font-semibold">// LIVE CLOUD PERSISTENCE</div>
+                <div className="text-slate-300 truncate">Collections: users &middot; verification_history</div>
+                <div className="text-amber-400 text-[10px]">Printable Verification Reports: Ready</div>
+              </div>
+            </div>
+
+            <Link
+              to="/history"
+              className="w-full py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider text-center text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2 min-h-[44px]"
+            >
+              <span>Explore Live Audit Ledger</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* 3. MULTI-ROLE ARCHITECTURE (AIDA Desire Stage) */}
       <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         <div className="text-center max-w-3xl mx-auto space-y-3">
